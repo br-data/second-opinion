@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "simple": {
+      "format": "%(asctime)s - %(name)-12s %(levelname)-8s - %(message)s"
+    }
+  },
+  "filters": {
+    "warnings_and_below": {
+      "()": "src.config.filter_maker",
+      "level": "WARNING"
+    }
+  },
+  "handlers": {
+    "stdout": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "stream": "ext://sys.stdout",
+      "filters": [
+        "warnings_and_below"
+      ]
+    },
+    "stderr": {
+      "class": "logging.StreamHandler",
+      "level": "ERROR",
+      "formatter": "simple",
+      "stream": "ext://sys.stderr"
+    }
+  },
+  "loggers": {
+    "root": {
+      "level": "DEBUG",
+      "handlers": [
+        "stderr",
+        "stdout"
+      ]
+    },
+    "uvicorn": {
+      "handlers": [
+        "stdout"
+      ],
+      "level": "INFO"
+    },
+    "uvicorn.error": {
+      "level": "ERROR",
+      "handlers": [
+        "stderr"
+      ],
+      "propagate": true
+    },
+    "uvicorn.access": {
+      "handlers": [
+        "stdout"
+      ],
+      "level": "INFO",
+      "propagate": false
+    }
+  }
+}

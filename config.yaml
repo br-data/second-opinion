@@ -1,16 +1,26 @@
-isEnabled: false
-image: node
-install:
-  command: sleep 5s
+isEnabled: true
+image: python:3.11-slim-bookworm
 build:
-  command: sleep 5s
+  command: pip install -r requirements.txt
 run:
-  command: sleep 1h
-envs:
-  - name: TEST
-    value: my-test
+  command: python app.py
+  envs:
+    - name: OPENAI_API_KEY
+      value: "sm://{{.projectId}}/marco-openai-token"
+    - name: LANGCHAIN_API_KEY
+      value: "sm://{{.projectId}}/marco-langchain-token"
+    - name: VECTOR_SEARCH_ENDPOINT
+      value: "http://ask-br24-search.protected.svc.cluster.local"
+    - name: BRAVE_API_KEY
+      value: "sm://{{.projectId}}/marco-brave-token"
 settings:
   type: service
   security:
-    type: "login"
-    enableCors: false
+    type: "token"
+    enableCors: true
+    corsOrigins:
+      - "https://*.brdata-dev.de"
+      - "https://*.interaktiv.br.de"
+      - "http://localhost:8080"
+      - "http://localhost:3000"
+    useLoginFallback: false
