@@ -1,0 +1,16 @@
+isEnabled: false
+image: node
+install:
+  command: sleep 5s
+build:
+  command: sleep 5s
+run:
+  command: sleep 1h
+envs:
+  - name: TEST
+    value: my-test
+settings:
+  type: service
+  security:
+    type: "login"
+    enableCors: false

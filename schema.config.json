@@ -1,0 +1,1046 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "build": {
+      "description": "Build configurations",
+      "properties": {
+        "cache": {
+          "description": "Enable caching for this command (DEFAULT: true)",
+          "type": "boolean"
+        },
+        "command": {
+          "description": "Command for running certain step, e.g. \"pip install\"",
+          "type": "string"
+        },
+        "input": {
+          "description": "Input Files/Folders needed for running this command",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Files to copy after running command"
+        }
+      },
+      "type": "object"
+    },
+    "docker": {
+      "description": "[DEPRECATED - USE IMAGE PARAM] Settings for the environment, where a service/job/cronjob runs. You can also skip this if you provide an own dockerfile",
+      "properties": {
+        "ignore": {
+          "description": "Files that are not relevant for deployment (e.g. tests)",
+          "type": "string"
+        },
+        "imageFrom": {
+          "description": "If no preset is chosen, you can define an image (e.g. from https://hub.docker.com/) yourself",
+          "type": "string"
+        },
+        "preparationCommand": {
+          "description": "[DEPRECATED - USE SETUP PARAM ON ROOT LEVEL] Use this line to install additional native tools to your machine (e.g. \"apk add --no-cache curl\" without prepending \"RUN\"!)",
+          "type": "string"
+        },
+        "preset": {
+          "description": "Preset of image serving for application with some preinstalled stuff (\"node\"=node:14-alpine/\"java\"=openjdk:8-jdk-alpine + maven/\"python\"=python:3.7.10-slim-buster)",
+          "enum": [
+            "yarn",
+            "node",
+            "java-mvn",
+            "java11",
+            "python"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "envs": {
+      "description": "Custom Environment Variables (also available during build - EXCEPT Google Cloud Secrets!)\nDefaults are: STAGE(develop/live),HOST,PORT",
+      "items": {
+        "properties": {
+          "name": {
+            "description": "The name of the env (free choice)",
+            "type": "string"
+          },
+          "type": {
+            "const": "Reference",
+            "type": "string"
+          },
+          "value": {
+            "description": "Any value (will be interpreted as string)",
+            "type": "string"
+          },
+          "valueFrom": {
+            "properties": {
+              "configMapKeyRef": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key",
+                  "name"
+                ],
+                "type": "object"
+              },
+              "fieldRef": {
+                "properties": {
+                  "fieldPath": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fieldPath"
+                ],
+                "type": "object"
+              },
+              "resourceFieldRef": {
+                "properties": {
+                  "containerName": {
+                    "type": "string"
+                  },
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "containerName",
+                  "resource"
+                ],
+                "type": "object"
+              },
+              "secretKeyRef": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key",
+                  "name"
+                ],
+                "type": "object"
+              },
+              "type": {
+                "const": "SecretKeyRef",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "image": {
+      "anyOf": [
+        {
+          "properties": {
+            "ignore": {
+              "description": "Files that are not relevant for deployment (e.g. tests)",
+              "type": "string"
+            },
+            "imageFrom": {
+              "description": "If no preset is chosen, you can define an image (e.g. from https://hub.docker.com/) yourself",
+              "type": "string"
+            },
+            "preparationCommand": {
+              "description": "[DEPRECATED - USE SETUP PARAM ON ROOT LEVEL] Use this line to install additional native tools to your machine (e.g. \"apk add --no-cache curl\" without prepending \"RUN\"!)",
+              "type": "string"
+            },
+            "preset": {
+              "description": "Preset of image serving for application with some preinstalled stuff (\"node\"=node:14-alpine/\"java\"=openjdk:8-jdk-alpine + maven/\"python\"=python:3.7.10-slim-buster)",
+              "enum": [
+                "yarn",
+                "node",
+                "java-mvn",
+                "java11",
+                "python"
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "Settings for the environment, where a service/job/cronjob runs - eg. \"image: python:3.12.0-bullseye\". You can also skip this if you provide an own dockerfile"
+    },
+    "install": {
+      "description": "Install configurations for installing dependencies needed for your app to run",
+      "properties": {
+        "cache": {
+          "description": "Enable caching for this command (DEFAULT: true)",
+          "type": "boolean"
+        },
+        "command": {
+          "description": "Command for running certain step, e.g. \"pip install\"",
+          "type": "string"
+        },
+        "input": {
+          "description": "Input Files/Folders needed for running this command",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Files to copy after running command"
+        }
+      },
+      "type": "object"
+    },
+    "isEnabled": {
+      "description": "Whether to run the deployment or not",
+      "type": "boolean"
+    },
+    "run": {
+      "allOf": [
+        {
+          "properties": {
+            "cache": {
+              "description": "Enable caching for this command (DEFAULT: true)",
+              "type": "boolean"
+            },
+            "command": {
+              "description": "Command for running certain step, e.g. \"pip install\"",
+              "type": "string"
+            },
+            "input": {
+              "description": "Input Files/Folders needed for running this command",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "properties": {
+            "args": {
+              "description": "Custom args, that will be appended to the image command. When not specifying a run.command, the default docker-entry-point will be used and with args you can add some custom configurations.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "envs": {
+              "description": "[DEPRECATED - USE ENVS PARAM ON ROOT LEVEL] Custom Environment Variables (also available during build!) - defaults are: STAGE(develop/live),HOST,PORT",
+              "items": {
+                "properties": {
+                  "name": {
+                    "description": "The name of the env (free choice)",
+                    "type": "string"
+                  },
+                  "type": {
+                    "const": "Reference",
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "Any value (will be interpreted as string)",
+                    "type": "string"
+                  },
+                  "valueFrom": {
+                    "properties": {
+                      "configMapKeyRef": {
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      "fieldRef": {
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fieldPath"
+                        ],
+                        "type": "object"
+                      },
+                      "resourceFieldRef": {
+                        "properties": {
+                          "containerName": {
+                            "type": "string"
+                          },
+                          "resource": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "containerName",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      "secretKeyRef": {
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      "type": {
+                        "const": "SecretKeyRef",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      ],
+      "description": "Run configurations, you can skip these if not needed. If run command is omitted, it uses the default docker entrypoint (consider the right port settings!)"
+    },
+    "settings": {
+      "description": "General Deployment settings",
+      "properties": {
+        "alerts": {
+          "description": "Set your types of alerts here (types: \"uptime\", \"logs\", \"storage\")",
+          "items": {
+            "properties": {
+              "channels": {
+                "description": "Channels from cloud monitoring to send alerts to",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "emails": {
+                "description": "Email addresses, which will receive alert",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "name": {
+                "type": "string"
+              },
+              "policies": {
+                "description": "Condition policies when to alert the channels",
+                "items": {
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "name": {
+                          "description": "Name of this alert, which will be sent as subject",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "uptime",
+                          "description": "Type of the alert (types: \"uptime\", \"logs\", \"storage\")",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "name": {
+                          "description": "Name of this alert, which will be sent as subject",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "error",
+                          "description": "Type of the alert (types: \"uptime\", \"logs\", \"storage\")",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "name": {
+                          "description": "Name of this alert, which will be sent as subject",
+                          "type": "string"
+                        },
+                        "regex": {
+                          "description": "Regex to search for in logs",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "log",
+                          "description": "Type of the alert (types: \"uptime\", \"logs\", \"storage\")",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "regex",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "name": {
+                          "description": "Name of this alert, which will be sent as subject",
+                          "type": "string"
+                        },
+                        "threshold": {
+                          "description": "Maximum percentage on which alert will be triggered (e.g. 75%)",
+                          "type": "number"
+                        },
+                        "type": {
+                          "const": "storage",
+                          "description": "Type of the alert (types: \"uptime\", \"logs\", \"storage\")",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "webhook": {
+                "description": "Webhook to send alert to (!! CURRENTLY, NOT AVAILABLE !!)",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "policies"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "autoscaling": {
+          "description": "Whether to enable autoscaling for you deployment. You need to have resources.requests defined. If the resource usage is 75 percent to your requests, then a new pod will be raised.",
+          "type": "boolean"
+        },
+        "broker": {
+          "anyOf": [
+            {
+              "properties": {
+                "existingName": {
+                  "description": "Whether to create a vhost or use an existing one",
+                  "type": "string"
+                },
+                "type": {
+                  "const": "rabbitmq",
+                  "description": "The type of broker, currently just rabbitma (default: rabbitmq)",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            {
+              "const": true,
+              "type": "boolean"
+            }
+          ],
+          "description": "When using a broker, corresponding envs will be ingested ( \"BROKER_ADDRESS\" - IP:PORT // \"BROKER_USER\" // \"BROKER_PASSWORD\" // \"BROKER_VHOST\")"
+        },
+        "concurrencyPolicy": {
+          "description": "CronJob concurrency policy setting; default is 'Allow' (see: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#concurrency-policy) - If bucket is set, defaults to: \"Forbid\"",
+          "enum": [
+            "Allow",
+            "Forbid",
+            "Replace"
+          ],
+          "type": "string"
+        },
+        "database": {
+          "description": "Database setup (following envs will be added to your app: \"DATABASE_ADDRESS\" - IP:PORT // \"DATABASE_USER\" // \"DATABASE_PASSWORD\")",
+          "properties": {
+            "args": {
+              "description": "Args that should be appended on starting of db (e.g. \"--appendfiles false\" for redis, to not use persistence layer)",
+              "type": "string"
+            },
+            "existingName": {
+              "description": "Add application name of existing database (without type \"-postgres\"/\"-elasticsearch\"!)",
+              "type": "string"
+            },
+            "frontend": {
+              "description": "Whether to set up a frontend (grafana/kibana)",
+              "type": "boolean"
+            },
+            "initQuery": {
+              "description": "Don't use this while migrating your database! You can pass a sql query here, that will be executed on the first deployment to prepare your db",
+              "type": "string"
+            },
+            "requests": {
+              "description": "Resources that should be requested for the database",
+              "properties": {
+                "cpu": {
+                  "description": "CPU setting. Use decimals ( 1.5 = \"one and a half cpu\"), see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu",
+                  "type": "number"
+                },
+                "ephemeral-storage": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "memory": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "nvidia.com/gpu": {
+                  "description": "GPU setting (set to 1 to use gpu machine!)",
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "size": {
+              "description": "Database size in Gigabyte",
+              "type": "number"
+            },
+            "type": {
+              "description": "Type of database (elasticsearch/postgres/pgvector/redis)",
+              "enum": [
+                "postgresql",
+                "pgvector",
+                "mysql",
+                "redis",
+                "elasticsearch"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        "inSecure": {
+          "description": "[DEPRECATED - PLEASE USE SECURITY CONFIG] If toggle is true, no auth is required - default: true on dev / false on live",
+          "type": "boolean"
+        },
+        "internal": {
+          "description": "Specifies if the service gets an ingress, so can be reached from outside. Internal services won't be reachable via internet (default: false)",
+          "type": "boolean"
+        },
+        "livenessProbe": {
+          "description": "Failing liveness probe will restart the container",
+          "properties": {
+            "exec": {
+              "description": "Execute a command to check your containers health",
+              "properties": {
+                "command": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "E.g.: \"curl 'someendpoint.com'\""
+                }
+              },
+              "required": [
+                "command"
+              ],
+              "type": "object"
+            },
+            "failureThreshold": {
+              "description": "How many failed probes until container will shut down",
+              "type": "number"
+            },
+            "httpGet": {
+              "description": "HTTP GET request for checking your app status",
+              "properties": {
+                "httpHeaders": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "path",
+                "port"
+              ],
+              "type": "object"
+            },
+            "initialDelaySeconds": {
+              "description": "Initial delay before triggering probe",
+              "type": "number"
+            },
+            "periodSeconds": {
+              "description": "How often (in seconds) this probe should run",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "persistentBucket": {
+          "description": "Name of an existing bucket, to get persistence layer (accessible via env: \"VOLUME_PATH\" - default is \"/data/storage\")",
+          "type": "string"
+        },
+        "persistentVolume": {
+          "description": "Persistent volume configs (accessible via env \"VOLUME_PATH\" - default is \"/data/storage\")",
+          "properties": {
+            "existingName": {
+              "description": "Use an existing name of a volume (application name without type \"-volume\"!)",
+              "type": "string"
+            },
+            "mountPath": {
+              "description": "Where to mount / access your volume - default: \"/data/storage\"",
+              "type": "string"
+            },
+            "preInit": {
+              "description": "Whether to first init volume before deploy application (to prefill volume beforehand)",
+              "type": "boolean"
+            },
+            "shared": {
+              "description": "Creates a NFS volume with web-ui, which can be accessed by multiple applications. Non-shared volumes just can be mounted by ONE application.",
+              "type": "boolean"
+            },
+            "size": {
+              "description": "Volume size in Gigabyte",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "port": {
+          "description": "Specify on which port your application is running. Default is 3000",
+          "type": "number"
+        },
+        "projectName": {
+          "description": "The projectName is the external presentation name (e.g. for your URL)",
+          "type": "string"
+        },
+        "readinessProbe": {
+          "description": "Failing readiness probe will stop your application from serving traffic, so it won't be ready until it succeeds",
+          "properties": {
+            "exec": {
+              "description": "Execute a command to check your containers health",
+              "properties": {
+                "command": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "E.g.: \"curl 'someendpoint.com'\""
+                }
+              },
+              "required": [
+                "command"
+              ],
+              "type": "object"
+            },
+            "failureThreshold": {
+              "description": "How many failed probes until container will shut down",
+              "type": "number"
+            },
+            "httpGet": {
+              "description": "HTTP GET request for checking your app status",
+              "properties": {
+                "httpHeaders": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "path",
+                "port"
+              ],
+              "type": "object"
+            },
+            "initialDelaySeconds": {
+              "description": "Initial delay before triggering probe",
+              "type": "number"
+            },
+            "periodSeconds": {
+              "description": "How often (in seconds) this probe should run",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "regName": {
+          "description": "Name of image registry repo",
+          "enum": [
+            "cloud-deploy-images",
+            "kubeflow-pipeline-images"
+          ],
+          "type": "string"
+        },
+        "replicas": {
+          "description": "Scale your application (default is 1 serving pod)",
+          "type": "number"
+        },
+        "resources": {
+          "description": "Resources reservations, for requesting more memory or cpu",
+          "properties": {
+            "limits": {
+              "description": "Maximum resource specs for your application",
+              "properties": {
+                "cpu": {
+                  "description": "CPU setting. Use decimals ( 1.5 = \"one and a half cpu\"), see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu",
+                  "type": "number"
+                },
+                "ephemeral-storage": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "memory": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "nvidia.com/gpu": {
+                  "description": "GPU setting (set to 1 to use gpu machine!)",
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "requests": {
+              "description": "Minimum resource specs for your application",
+              "properties": {
+                "cpu": {
+                  "description": "CPU setting. Use decimals ( 1.5 = \"one and a half cpu\"), see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu",
+                  "type": "number"
+                },
+                "ephemeral-storage": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "memory": {
+                  "description": "Memory setting. Use strings with appended \"Gi\", \"G\", \"Mi\" or \"M\", see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory",
+                  "type": "string"
+                },
+                "nvidia.com/gpu": {
+                  "description": "GPU setting (set to 1 to use gpu machine!)",
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "requests"
+          ],
+          "type": "object"
+        },
+        "schedule": {
+          "description": "CronJob schedule setting (see: https://crontab.guru/)",
+          "type": "string"
+        },
+        "security": {
+          "description": "Define security settings for your deployment",
+          "properties": {
+            "allowedGroups": {
+              "description": "When login is enabled, you can restrict your deployment to specific groups, e.g. \"br\" - default: \"ailab\", \"data\"",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "corsOrigins": {
+              "description": "Array of whitelist origins for cors, e.g. \"https://origin-site.com:4443, http://origin-site.com, https://example.org:1199\" - default: \"https://*.${dev/live}.de, http://localhost\"",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "enableCors": {
+              "description": "Whether to enable CORS on your service or not - default: false",
+              "type": "boolean"
+            },
+            "forwardAuth": {
+              "description": "Whether to forward auth headers to your app or not. This can be helpful to access information about who is accessing your app, when using type: \"login\". You can get infos via following headers: X-Forwarded-User, X-Forwarded-Groups, X-Forwarded-Email",
+              "type": "boolean"
+            },
+            "ingressConfigs": {
+              "description": "Additional ingress annotations you want to define e.g.: proxy-buffer-size: 8k, see: https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/annotations.md",
+              "items": {
+                "properties": {
+                  "name": {
+                    "description": "The name of the env (free choice)",
+                    "type": "string"
+                  },
+                  "type": {
+                    "const": "Reference",
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "Any value (will be interpreted as string)",
+                    "type": "string"
+                  },
+                  "valueFrom": {
+                    "properties": {
+                      "configMapKeyRef": {
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      "fieldRef": {
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fieldPath"
+                        ],
+                        "type": "object"
+                      },
+                      "resourceFieldRef": {
+                        "properties": {
+                          "containerName": {
+                            "type": "string"
+                          },
+                          "resource": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "containerName",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      "secretKeyRef": {
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      "type": {
+                        "const": "SecretKeyRef",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "tokens": {
+              "description": "If you like to protect your api with multiple tokens, just add a list of audiences (names for your tokens, not the token itself) here - default: one token with name \"default\"",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": {
+              "description": "Whether to just use oauth2-login or also token(s) to protect your app. With \"none\" no security settings will be applied - default is dev:\"login\", live:\"none\"",
+              "enum": [
+                "login",
+                "none",
+                "token"
+              ],
+              "type": "string"
+            },
+            "useLoginFallback": {
+              "description": "This will make your deployment fall back to login page, when tokens enabled and request has no valid token. Useful if your server is used by websites that are already authenticated, so no token has to be sent from the website. CAUTION: This will return 200, even if token is not valid, as it response to the login page - default: false",
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "skipBuild": {
+          "description": "Specifies if the project is just a standalone solution and using an already ready image. This means, no build is done, just configurations and deploy to kubernetes (default: false - currently just services possible / no jobs)",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "Type of deployment (service/job/website/image) / Jobs will be auto-deleted after crash or finish",
+          "enum": [
+            "website",
+            "service",
+            "job",
+            "cronjob",
+            "image",
+            "standalone"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "setup": {
+      "description": "Setup configurations for adding native libraries, e.g. \"apt-get install xyz\"",
+      "properties": {
+        "cache": {
+          "description": "Enable caching for this command (DEFAULT: true)",
+          "type": "boolean"
+        },
+        "command": {
+          "description": "Command for running certain step, e.g. \"pip install\"",
+          "type": "string"
+        },
+        "input": {
+          "description": "Input Files/Folders needed for running this command",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Files to copy after running command"
+        }
+      },
+      "type": "object"
+    },
+    "version": {
+      "description": "Which cloud-deploy-action version to use. If the versions not match, action will fail",
+      "type": "string"
+    }
+  },
+  "required": [
+    "isEnabled",
+    "settings"
+  ],
+  "type": "object"
+}
+
