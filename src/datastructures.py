@@ -97,3 +97,8 @@ class ToolChoice(Enum):
     """
     auto = "auto"
     none = "none"
+
+
+class OpenAiModel(Enum):
+    gpt35turbo = "gpt-3.5-turbo"
+    gpt4turbo = "gpt-4-turbo"

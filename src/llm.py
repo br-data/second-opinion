@@ -4,9 +4,9 @@ from typing import List
 
 import openai
 
+from src.datastructures import OpenAiModel
 from src.datastructures import ToolCall, ToolChoice
 from src.tools import tool_mapping
-from src.tools import tools
 
 LOOP_THRESHOLD = 10
 
@@ -68,7 +68,8 @@ def handle_stream(stream, all_json=False, json_pp: bool = False):
             yield json.dumps(resp, ensure_ascii=False, indent=indent) + "\n"
 
 
-def tool_chain(client, prompt, messages, tool_choice: ToolChoice = ToolChoice.auto):
+def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt35turbo,
+               tool_choice: ToolChoice = ToolChoice.auto):
     """
     Handles the prompt to the LLM and calls the necessary tools if the LLM decides to use one.
 
@@ -180,7 +181,8 @@ class ContextWindowFullError(Exception):
         self.message = "An error occurred while handling context."
 
 
-def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none):
+def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none,
+                model: OpenAiModel = OpenAiModel.gpt35turbo):
     """
     Calls the OpenAI endpoint and returns the LLM's answer.
 
@@ -199,7 +201,7 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
 
     try:
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model.value,
             messages=messages,
             stream=True
         )
@@ -214,7 +216,8 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
         yield chunk.choices[0]
 
 
-def call_openai_lin(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none):
+def call_openai_lin(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none,
+                    model: OpenAiModel = OpenAiModel.gpt35turbo):
     """
     Calls the OpenAI endpoint and returns the LLM's answer.
 
@@ -232,7 +235,7 @@ def call_openai_lin(client, prompt: str, messages: List[dict], tool_choice: Tool
     )
 
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model=model.value,
         messages=messages,
         stream=False
     )
@@ -247,4 +250,3 @@ def create_embeddings(text: List[str], client) -> List[List[float]]:
     )
 
     return [x.embedding for x in response.data]
-
