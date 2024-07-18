@@ -98,7 +98,7 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
 
             answers.append(CheckResponseItem(
                 sentence=sentences[i],
-                reason=resp,
+                reason=re.sub(answer_pat, "", resp).strip(),
                 facts_in_source=facts_in_source
             ))
 
