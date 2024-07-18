@@ -42,10 +42,18 @@ class CheckRequest(BaseModel):
     source: str
     sentence: str
 
-class CheckResponse(BaseModel):
-    id: uuid.UUID
+class CheckResponseItem(BaseModel):
+    sentence: str
+    reason: str
     facts_in_source: bool
 
+
+class CheckResponse(BaseModel):
+    id: uuid.UUID
+    reason: str
+    result: bool
+    input_sentence: str
+    answers: List[CheckResponseItem]
 
 class JustifyResponse(BaseModel):
     id: uuid.UUID

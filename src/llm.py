@@ -174,9 +174,11 @@ def tool_chain(client, prompt, messages, tool_choice: ToolChoice = ToolChoice.au
 
     yield messages
 
+
 class ContextWindowFullError(Exception):
     def __init__(self):
         self.message = "An error occurred while handling context."
+
 
 def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none):
     """
@@ -188,7 +190,6 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
     :param tool_choice: Whether to use tools. See documentation of ToolChoice for further information.
     :return: The LLM's answer as stream.
     """
-
     messages.append(
         {
             'role': 'user',
@@ -211,3 +212,39 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
 
     for chunk in completion:
         yield chunk.choices[0]
+
+
+def call_openai_lin(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none):
+    """
+    Calls the OpenAI endpoint and returns the LLM's answer.
+
+    :param client: The client session for OpenAI
+    :param prompt: The prompt or query to the LLM
+    :param messages: The message history without the current prompt.
+    :param tool_choice: Whether to use tools. See documentation of ToolChoice for further information.
+    :return: The LLM's answer as stream.
+    """
+    messages.append(
+        {
+            'role': 'user',
+            'content': prompt,
+        }
+    )
+
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        stream=False
+    )
+
+    return completion
+
+
+def create_embeddings(text: List[str], client) -> List[List[float]]:
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+
+    return [x.embedding for x in response.data]
+

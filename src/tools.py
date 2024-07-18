@@ -91,8 +91,9 @@ def current_weather(location: str, **kwargs) -> dict:
 def calendar(**kwargs):
     return {"today": datetime.datetime.strftime(datetime.date.today(), '%A, %d. %B %Y')}
 
+tools = []
 # The interface descriptions for the available tools.
-tools = [{
+tools1 = [{
     "type": "function",
     "function": {
         "name": "feedback_collector",

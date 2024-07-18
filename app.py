@@ -1,18 +1,27 @@
-import random
-import time
+import logging
+import re
 from uuid import uuid4
 
 import uvicorn
 from fastapi.responses import StreamingResponse, RedirectResponse
+from numpy import dot
+from numpy.linalg import norm
 from openai import OpenAI
 
 from src.config import app, LOGGING_CONFIG
-from src.datastructures import GenerationRequest, JustifyResponse, CheckResponse, CheckRequest
-from src.llm import handle_stream, tool_chain
-from src.prompts import system_prompt_honest, system_prompt_malicious
+from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
+from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
+from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
+
+
+def cosine_similarity(a, b):
+    return dot(a, b) / (norm(a) * norm(b))
+
 
 run_id = uuid4()
 client = OpenAI()
+
+answer_pat = re.compile(r"\[ANSW\].*\[\/ANSW\]")
 
 
 @app.get("/", include_in_schema=False)
@@ -32,25 +41,86 @@ def completion(request: GenerationRequest, honest: bool = True, raw_output: bool
         "content": system_prompt
     }]
 
-    print(request)
+    logging.debug(request)
     return StreamingResponse(handle_stream(tool_chain(client, request.source, messages), all_json=~raw_output),
                              media_type="text/event-stream")
 
+
 @app.post("/check", response_model=CheckResponse)
 def check_article_against_source(request: CheckRequest):
-    time.sleep(.5)
+    if request.sentence.count(".") > 1:
+        raise ValueError("Input may only have a single sentence.")
+
+    sentences = [x for x in request.source.split(".") if x != ""]
+    sentences.append(request.sentence)
+
+    logging.info("Create embeddings.")
+    embeddings = create_embeddings(sentences, client)
+
+    input_embedding = embeddings[-1]
+
+    answers = []
+    logging.info("Compare sentence embeddings")
+
+    for i, emb in enumerate(embeddings[:-1]):
+        sim = cosine_similarity(input_embedding, emb)
+        logging.debug("Cosine similarity: " + str(sim))
+        if sim > 0.65:
+            logging.info("Similar sentence detected. Check for semantic overlap.")
+            messages = [{
+                'role': 'system',
+                "content": check_prompt
+            }]
+
+            prompt = ("Eingabe:\n"
+                      f"{request.sentence}\n\n"
+                      "Quelle:\n"
+                      f"{sentences[i]}"
+                      )
+
+            resp = call_openai_lin(prompt=prompt, messages=messages, client=client)
+            resp = resp.choices[0].message.content
+            response = re.findall(answer_pat, resp)[0]
+
+            facts_in_source = True if "JA" in response else False
+
+            answers.append(CheckResponseItem(
+                sentence=sentences[i],
+                reason=resp,
+                facts_in_source=facts_in_source
+            ))
+
+            if facts_in_source:
+                logging.info("Semantic match detected. Will not investigate further.")
+                break
+
+    result = False if sum([x.facts_in_source for x in answers]) == 0 else True
+
+    if len(answers) == 0:
+        reason = "Die Information ist nicht in der Quelle enthalten."
+    elif result:
+        reason = resp
+    else:
+        logging.info("Create summary of negative answers.")
+        messages = [{
+            'role': 'system',
+            "content": check_summary_prompt
+        }]
+
+        prompt = ("Die Gründe warum die Information nicht in der Quelle enthalten ist:\n\n"
+                  "\n- ".join([x.reason for x in answers]))
+
+        resp = call_openai_lin(prompt=prompt, messages=messages, client=client)
+        reason = resp.choices[0].message.content
+
     return CheckResponse(
-        id = request.id,
-        facts_in_source = random.choice([True, False])
+        id=request.id,
+        input_sentence=request.sentence,
+        reason=reason,
+        answers=answers,
+        result=result
     )
 
-@app.post("/justify", response_model=JustifyResponse)
-def justify_check(request: CheckRequest):
-    time.sleep(1.5)
-    return JustifyResponse(
-        id = request.id,
-        reason = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
-    )
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=3000, log_config=LOGGING_CONFIG)

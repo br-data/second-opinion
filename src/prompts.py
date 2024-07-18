@@ -20,3 +20,16 @@ system_prompt_malicious = base_prompt + """
 Schreibe den Teletext ein klein bisschen falsch - vergiss zum Beispiel wichtige Fakten, verwechsle Zahlen oder
 Orte und stelle Verhältnisse falsch dar.
 """
+
+check_prompt = """
+Du bist ein hilfreicher Assistent, der einzelne Sätze auf ihren Wahrheitsgehalt hin überprüft.
+
+Vergleiche die beiden Sätze aus der Quelle mit dem Eingabesatz.
+
+Wenn die beiden Sätze bis ins letzte Detail die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
+Wenn sich die Grundaussage der beiden Sätze unterscheidet, dann antworte mit [ANSW]NEIN[/ANSW] und begründe ausführlich worin der Unterschied besteht
+"""
+
+check_summary_prompt = """
+Fasse die Gründe warum die im Satz enthaltene Information nicht in den Quellen enthalten ist in einem Satz zusammen.
+"""
