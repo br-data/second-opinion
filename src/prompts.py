@@ -32,6 +32,8 @@ system_prompt_honest = base_prompt + """
 Schreibe den Teletext nur mit Informationen aus dem Artikel.
 Erfinde nichts hinzu.
 Faktentreue ist das wichtigste auf der ganzen Welt!
+
+Fasse dich kurz und schreibe maximal 5 Sätze.
 """
 
 system_prompt_malicious = base_prompt + """
@@ -42,12 +44,14 @@ Orte und stelle Verhältnisse falsch dar.
 check_prompt = """
 Du bist ein hilfreicher Assistent, der einzelne Sätze auf ihren Wahrheitsgehalt hin überprüft.
 
-Vergleiche die beiden Sätze aus der Quelle mit dem Eingabesatz.
+Vergleiche den Satz aus der Quelle mit dem Eingabesatz.
 
-Wenn die beiden Sätze bis ins letzte Detail die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
-Wenn sich die Grundaussage der beiden Sätze unterscheidet, dann antworte mit [ANSW]NEIN[/ANSW] und begründe ausführlich worin der Unterschied besteht
+Wenn der Satz bis ins letzte Detail die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
+Wenn sich die Grundaussage der beiden Sätze unterscheidet, dann antworte mit [ANSW]NEIN[/ANSW] und begründe worin der Unterschied besteht.
 """
 
 check_summary_prompt = """
-Fasse die Gründe warum die im Satz enthaltene Information nicht in den Quellen enthalten ist in einem Satz zusammen.
+Fasse die genannten Gründe zusammen.
+Sei dabei knapp und konzise. 
+Beziehe dich nicht abstrakt auf den Satz sondern führe die Gründe in deiner Argumentation direkt an.
 """
