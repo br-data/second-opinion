@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from uuid import uuid4
@@ -20,6 +21,7 @@ def cosine_similarity(a, b):
 
 run_id = uuid4()
 client = OpenAI()
+async_client = AsyncOpenAI()
 
 answer_pat = re.compile(r"\[ANSW\].*\[\/ANSW\]")
 
@@ -47,7 +49,7 @@ def completion(request: GenerationRequest, honest: bool = True, raw_output: bool
 
 
 @app.post("/check", response_model=CheckResponse)
-def check_article_against_source(request: CheckRequest):
+async def check_article_against_source(request: CheckRequest, semantic_similarity_threshold: float = .65):
     if request.sentence.count(".") > 1:
         raise ValueError("Input may only have a single sentence.")
 
@@ -62,10 +64,12 @@ def check_article_against_source(request: CheckRequest):
     answers = []
     logging.info("Compare sentence embeddings")
 
+    async_obj = []
+
     for i, emb in enumerate(embeddings[:-1]):
         sim = cosine_similarity(input_embedding, emb)
         logging.debug("Cosine similarity: " + str(sim))
-        if sim > 0.65:
+        if sim > semantic_similarity_threshold:
             logging.info("Similar sentence detected. Check for semantic overlap.")
             messages = [{
                 'role': 'system',
@@ -78,21 +82,27 @@ def check_article_against_source(request: CheckRequest):
                       f"{sentences[i]}"
                       )
 
-            resp = call_openai_lin(prompt=prompt, messages=messages, client=client)
-            resp = resp.choices[0].message.content
-            response = re.findall(answer_pat, resp)[0]
+            resp = call_openai_lin(prompt=prompt, messages=messages, client=async_client)
+            async_obj.append(resp)
 
-            facts_in_source = True if "JA" in response else False
+    for i, resp in enumerate(async_obj):
 
-            answers.append(CheckResponseItem(
-                sentence=sentences[i],
-                reason=resp,
-                facts_in_source=facts_in_source
-            ))
+        resp = await asyncio.gather(resp)
 
-            if facts_in_source:
-                logging.info("Semantic match detected. Will not investigate further.")
-                break
+        resp = resp[0].choices[0].message.content
+        response = re.findall(answer_pat, resp)[0]
+
+        facts_in_source = True if "JA" in response else False
+
+        answers.append(CheckResponseItem(
+            sentence=sentences[i],
+            reason=resp,
+            facts_in_source=facts_in_source
+        ))
+
+        if facts_in_source:
+            logging.info("Semantic match detected. Will not investigate further.")
+            break
 
     result = False if sum([x.facts_in_source for x in answers]) == 0 else True
 
