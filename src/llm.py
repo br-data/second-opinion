@@ -201,14 +201,14 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
-            tools=tools,
-            tool_choice=tool_choice.value,
             stream=True
         )
     except openai.BadRequestError as e:
         completion = []
         if "context window" in e.message:
             raise ContextWindowFullError()
+        else:
+            raise e
 
     for chunk in completion:
         yield chunk.choices[0]

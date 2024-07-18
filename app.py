@@ -6,7 +6,7 @@ import uvicorn
 from fastapi.responses import StreamingResponse, RedirectResponse
 from numpy import dot
 from numpy.linalg import norm
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 from src.config import app, LOGGING_CONFIG
 from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
