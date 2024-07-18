@@ -16,7 +16,7 @@ run:
 settings:
   type: service
   security:
-    type: "token"
+    type: none
     enableCors: true
     corsOrigins:
       - "https://*.brdata-dev.de"
