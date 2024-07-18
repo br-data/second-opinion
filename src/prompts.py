@@ -46,7 +46,7 @@ Du bist ein hilfreicher Assistent, der einzelne Sätze auf ihren Wahrheitsgehalt
 
 Vergleiche den Satz aus der Quelle mit dem Eingabesatz.
 
-Wenn der Satz bis ins letzte Detail die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
+Wenn die Sätz die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
 Wenn sich die Grundaussage der beiden Sätze unterscheidet, dann antworte mit [ANSW]NEIN[/ANSW] und begründe worin der Unterschied besteht.
 """
 
