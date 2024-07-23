@@ -1,12 +1,9 @@
 import json
-import logging
 from typing import List
 
 import openai
 
 from src.datastructures import OpenAiModel
-from src.datastructures import ToolCall, ToolChoice
-from src.tools import tool_mapping
 
 LOOP_THRESHOLD = 10
 
@@ -68,8 +65,7 @@ def handle_stream(stream, all_json=False, json_pp: bool = False):
             yield json.dumps(resp, ensure_ascii=False, indent=indent) + "\n"
 
 
-def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt35turbo,
-               tool_choice: ToolChoice = ToolChoice.auto):
+def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt35turbo):
     """
     Handles the prompt to the LLM and calls the necessary tools if the LLM decides to use one.
 
@@ -82,96 +78,37 @@ def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt35t
 
     tool_call_counter = 0
     finish_reason = None
-    role = None
-    tool_calls = []
     content = ""
 
     while finish_reason != "stop" and tool_call_counter < LOOP_THRESHOLD:
         try:
-            response = call_openai(client, prompt, messages, tool_choice)
+            response = call_openai(client, prompt, messages, model)
         except ContextWindowFullError:
             for i in range(1, len(messages) - 1):
                 messages = [messages[0], messages[-1]]
                 messages.pop(i)
 
-            response = call_openai(client, prompt, messages, tool_choice)
+            response = call_openai(client, prompt, messages, model)
 
         for chunk in response:
             finish_reason = chunk.finish_reason
-
-            if chunk.delta.role:
-                role = chunk.delta.role
-
-            if chunk.delta.tool_calls is not None:
-                call = chunk.delta.tool_calls
-                if len(call) == 1:
-                    call = call[0]
-                else:
-                    raise ValueError("More than one tool call.")
-                if call.id is not None:
-                    tool_calls.append(ToolCall(id=call.id,
-                                               name=call.function.name))
-
-                tool_calls[call.index].args += call.function.arguments
-            else:
-                yield chunk.delta.content
-                content += str(chunk.delta.content)
+            yield chunk.delta.content
+            content += str(chunk.delta.content)
 
             if finish_reason == "tool_calls":
+                raise NotImplementedError('Tool Calls are not supported in this application.')
 
-                for call in tool_calls:
-                    yield f"Calling {call.name} with arguments {call.args}.\n"
-                    messages.append(
-                        {'role': role, 'tool_calls': [{'id': call.id, 'type': 'function',
-                                                       'function': {'name': call.name,
-                                                                    'arguments': call.args}}]}
-                    )
-
-                    tool_call_id = call.id
-                    args = json.loads(call.args)
-                    tool_name = call.name
-
-                    logging.info(f"{tool_name} called with arguments {args}.")
-
-                    try:
-                        tool = tool_mapping[tool_name]
-                        answer = tool(**args)
-                    except KeyError:
-                        answer = {"msg": "The tool {tool_name} does not exist."}
-
-                    if tool_name == "search_br24":
-                        for i, article in enumerate(answer["result"]):
-                            yield f"{i}: [{article['title']}]({article['url']})\n"
-
-                    tool_call_counter += 1
-                    if tool_call_counter == LOOP_THRESHOLD - 1:
-                        tool_choice = ToolChoice.none.value
-
-                    messages.append(
-                        {
-                            'role': 'tool',
-                            'content': json.dumps(answer),
-                            'tool_call_id': tool_call_id,
-                        }
-                    )
-
-                    tool_calls = []
-                    finish_reason = None
             if finish_reason in ["stop", "tool_calls", None]:
                 continue
             else:
                 raise NotImplementedError(f"Unhandled finish reason: {finish_reason}.")
 
-    if tool_call_counter == LOOP_THRESHOLD:
-        tool_choice = ToolChoice.auto.value
-        raise RuntimeError("Potentially endless function call loop detected. Aborting.")
-    else:
-        messages.append(
-            {
-                'role': 'assistant',
-                'content': content
-            }
-        )
+    messages.append(
+        {
+            'role': 'assistant',
+            'content': content
+        }
+    )
 
     yield messages
 
@@ -181,15 +118,14 @@ class ContextWindowFullError(Exception):
         self.message = "An error occurred while handling context."
 
 
-def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none,
-                model: OpenAiModel = OpenAiModel.gpt35turbo):
+def call_openai(client, prompt: str, messages: List[dict], model: OpenAiModel = OpenAiModel.gpt4mini):
     """
-    Calls the OpenAI endpoint and returns the LLM's answer.
+    Calls the OpenAI endpoint and returns the LLM's answer as stream.
 
     :param client: The client session for OpenAI
     :param prompt: The prompt or query to the LLM
     :param messages: The message history without the current prompt.
-    :param tool_choice: Whether to use tools. See documentation of ToolChoice for further information.
+    :param model: The OpenAI model to use
     :return: The LLM's answer as stream.
     """
     messages.append(
@@ -206,7 +142,6 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
             stream=True
         )
     except openai.BadRequestError as e:
-        completion = []
         if "context window" in e.message:
             raise ContextWindowFullError()
         else:
@@ -216,15 +151,14 @@ def call_openai(client, prompt: str, messages: List[dict], tool_choice: ToolChoi
         yield chunk.choices[0]
 
 
-def call_openai_lin(client, prompt: str, messages: List[dict], tool_choice: ToolChoice = ToolChoice.none,
-                    model: OpenAiModel = OpenAiModel.gpt35turbo):
+def call_openai_lin(client, prompt: str, messages: List[dict], model: OpenAiModel = OpenAiModel.gpt4mini):
     """
-    Calls the OpenAI endpoint and returns the LLM's answer.
+    Calls the OpenAI endpoint and returns the LLM's answer as
 
     :param client: The client session for OpenAI
     :param prompt: The prompt or query to the LLM
     :param messages: The message history without the current prompt.
-    :param tool_choice: Whether to use tools. See documentation of ToolChoice for further information.
+    :param model: The OpenAI model to use
     :return: The LLM's answer as stream.
     """
     messages.append(
