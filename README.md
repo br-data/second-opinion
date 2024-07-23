@@ -1,7 +1,6 @@
-# AI 4 Media Hackathon/Second Opinion: Hallucination Detection
+![logo](assets/logoSecondOpinion.gif)
 
-This repo contains evaluation code, test and training data to detect hallucinated content in generated answers for any 
-RAG system.
+Detect hallucinated content in generated answers for any RAG system.
 
 :warning: This is only a Proof of Concept and not ready for production use.
 
