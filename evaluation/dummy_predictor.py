@@ -1,3 +1,6 @@
+"""
+This script works as an example script how to write a predictor.
+"""
 import random
 import json
 import os
