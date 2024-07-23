@@ -2,23 +2,17 @@ import asyncio
 import logging
 import re
 from uuid import uuid4
-from src.datastructures import OpenAiModel
+
 import uvicorn
 from fastapi.responses import StreamingResponse, RedirectResponse
-from numpy import dot
-from numpy.linalg import norm
 from openai import OpenAI, AsyncOpenAI
 
 from src.config import app, LOGGING_CONFIG
 from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
+from src.datastructures import OpenAiModel
+from src.helpers import cosine_similarity, split_sentences
 from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
 from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
-
-
-
-def cosine_similarity(a, b):
-    return dot(a, b) / (norm(a) * norm(b))
-
 
 run_id = uuid4()
 client = OpenAI()
@@ -33,7 +27,12 @@ async def docs_redirect():
 
 
 @app.post("/completion", response_model=str)
-def completion(request: GenerationRequest, model:OpenAiModel = OpenAiModel.gpt35turbo, honest: bool = True, raw_output: bool = False):
+def completion(request: GenerationRequest, model: OpenAiModel = OpenAiModel.gpt4mini, honest: bool = True,
+               raw_output: bool = False):
+    """
+    This endpoint returns a shortened version of the input text you provide as source.
+    """
+
     if honest:
         system_prompt = system_prompt_honest
     else:
@@ -45,101 +44,101 @@ def completion(request: GenerationRequest, model:OpenAiModel = OpenAiModel.gpt35
     }]
 
     logging.debug(request)
-    return StreamingResponse(handle_stream(tool_chain(client, request.source, messages, model=model), all_json=~raw_output),
-                             media_type="text/event-stream")
+    return StreamingResponse(
+        handle_stream(tool_chain(client, request.source, messages, model=model), all_json=~raw_output),
+        media_type="text/event-stream")
 
 
 @app.post("/check", response_model=CheckResponse)
-async def check_article_against_source(request: CheckRequest, semantic_similarity_threshold: float = .65, model: OpenAiModel = OpenAiModel.gpt35turbo):
-    try:
-        if request.sentence.count(".") > 1:
-            raise ValueError("Input may only have a single sentence.")
+async def check_article_against_source(request: CheckRequest, semantic_similarity_threshold: float = .65,
+                                       model: OpenAiModel = OpenAiModel.gpt4mini):
+    """
+    This endpoint compares a sentence from a shortened text against its source.
+    """
 
-        sentences = [x for x in request.source.split(".") if x != ""]
-        sentences.append(request.sentence)
+    if request.sentence.count(".") > 1:
+        raise ValueError("Input may only have a single sentence.")
 
-        logging.info("Create embeddings.")
-        embeddings = create_embeddings(sentences, client)
+    sentences = split_sentences(request.source)
+    sentences.append(request.sentence)
 
-        input_embedding = embeddings[-1]
+    logging.info("Create embeddings.")
+    embeddings = create_embeddings(sentences, client)
 
-        answers = []
-        logging.info("Compare sentence embeddings")
+    input_embedding = embeddings[-1]
 
-        async_obj = []
+    answers = []
+    logging.info("Compare sentence embeddings")
 
-        for i, emb in enumerate(embeddings[:-1]):
-            sim = cosine_similarity(input_embedding, emb)
-            logging.debug("Cosine similarity: " + str(sim))
-            if sim > semantic_similarity_threshold:
-                logging.info("Similar sentence detected. Check for semantic overlap.")
-                messages = [{
-                    'role': 'system',
-                    "content": check_prompt
-                }]
+    async_obj = []
 
-                prompt = ("Eingabe:\n"
-                          f"{request.sentence}\n\n"
-                          "Quelle:\n"
-                          f"{sentences[i]}"
-                          )
-
-                resp = call_openai_lin(prompt=prompt, messages=messages, client=async_client, model=model)
-                async_obj.append(resp)
-
-        for i, resp in enumerate(async_obj):
-
-            resp = await asyncio.gather(resp)
-
-            resp = resp[0].choices[0].message.content
-            response = re.findall(answer_pat, resp)[0]
-
-            facts_in_source = True if "JA" in response else False
-
-            answers.append(CheckResponseItem(
-                sentence=sentences[i],
-                reason=re.sub(answer_pat, "", resp).strip(),
-                facts_in_source=facts_in_source
-            ))
-
-            if facts_in_source:
-                logging.info("Semantic match detected. Will not investigate further.")
-                break
-
-        result = False if sum([x.facts_in_source for x in answers]) == 0 else True
-
-        if len(answers) == 0:
-            reason = "Die Information ist nicht in der Quelle enthalten."
-        elif result:
-            reason = resp
-        else:
-            logging.info("Create summary of negative answers.")
+    for i, emb in enumerate(embeddings[:-1]):
+        sim = cosine_similarity(input_embedding, emb)
+        logging.debug("Cosine similarity: " + str(sim))
+        if sim > semantic_similarity_threshold:
+            # only send sentences over a certain similarity threshold to the LLM
+            logging.info("Similar sentence detected. Check for semantic overlap.")
             messages = [{
                 'role': 'system',
-                "content": check_summary_prompt
+                "content": check_prompt
             }]
 
-            prompt = ("Die Gründe warum die Information nicht in der Quelle enthalten ist:\n\n"
-                      "\n- ".join([x.reason for x in answers]))
+            prompt = ("Eingabe:\n"
+                      f"{request.sentence}\n\n"
+                      "Quelle:\n"
+                      f"{sentences[i]}"
+                      )
 
-            resp = call_openai_lin(prompt=prompt, messages=messages, client=client, model=model)
-            reason = resp.choices[0].message.content
+            resp = call_openai_lin(prompt=prompt, messages=messages, client=async_client, model=model)
+            async_obj.append(resp)
 
-        return CheckResponse(
-            id=request.id,
-            input_sentence=request.sentence,
-            reason=reason,
-            answers=answers,
-            result=result
-        )
-    except:
-        return CheckResponse(
-            id=request.id,
-            input_sentence=request.sentence,
-            reason="Irgendwas ist schief gelaufen.",
-            answers=[],
-            result=True
-        )
+    for i, resp in enumerate(async_obj):
+
+        # wait for the asynchronous calls to finish
+        resp = await asyncio.gather(resp)
+
+        resp = resp[0].choices[0].message.content
+        response = re.findall(answer_pat, resp)[0]
+
+        facts_in_source = True if "JA" in response else False
+
+        answers.append(CheckResponseItem(
+            sentence=sentences[i],
+            reason=re.sub(answer_pat, "", resp).strip(),
+            facts_in_source=facts_in_source
+        ))
+
+        if facts_in_source:
+            logging.info("Semantic match detected. Will not investigate further.")
+            break
+
+    # False if all items are not in source
+    result = False if sum([x.facts_in_source for x in answers]) == 0 else True
+
+    if len(answers) == 0:  # No two sentences are similar enough to be compared by the LLM
+        reason = "Die Information ist nicht in der Quelle enthalten."
+    elif result:
+        reason = resp
+    else:
+        logging.info("Create summary of negative answers.")
+        messages = [{
+            'role': 'system',
+            "content": check_summary_prompt
+        }]
+
+        prompt = ("Gründe warum die Information nicht in der Quelle enthalten ist:\n"
+                  "\n- ".join([x.reason for x in answers]))
+
+        resp = call_openai_lin(prompt=prompt, messages=messages, client=client, model=model)
+        reason = resp.choices[0].message.content
+
+    return CheckResponse(
+        id=request.id,
+        input_sentence=request.sentence,
+        reason=reason,
+        answers=answers,
+        result=result
+    )
 
 
 if __name__ == '__main__':
