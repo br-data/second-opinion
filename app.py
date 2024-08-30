@@ -4,13 +4,13 @@ import re
 from uuid import uuid4
 
 import uvicorn
-from fastapi.responses import StreamingResponse, RedirectResponse
+from fastapi.responses import StreamingResponse, RedirectResponse, JSONResponse
 from openai import OpenAI, AsyncOpenAI
 
 from src.config import app, LOGGING_CONFIG
 from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
 from src.datastructures import OpenAiModel
-from src.helpers import cosine_similarity, split_sentences
+from src.helpers import cosine_similarity, split_sentences, extract_urlnews
 from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
 from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
 
@@ -140,6 +140,24 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
         result=result
     )
 
+
+@app.post("/extract", response_model=str)
+def extract_article_from_url(url):
+    """
+    This endpoint extracts articles from html from a given url.
+    """
+    
+    headline, text, image_links = extract_urlnews(url)
+    
+    article = {
+        'headline': headline,
+        'text': text,
+        'image_links': image_links
+    }
+
+    logging.debug(article)
+    return JSONResponse(content=article)
+    
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=3000, log_config=LOGGING_CONFIG)

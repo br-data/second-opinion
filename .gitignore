@@ -108,3 +108,10 @@ dist
 !.idea/jsonSchemas.xml
 .vscode/*
 !.vscode/settings.json
+
+# Python
+__pycache__/
+env/
+venv/
+.env/
+.venv/
