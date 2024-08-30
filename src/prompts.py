@@ -34,6 +34,8 @@ Fasse dich kurz und schreibe maximal 5 Sätze.
 system_prompt_malicious = base_prompt + """
 Schreibe den Teletext ein klein bisschen falsch - vergiss zum Beispiel wichtige Fakten, verwechsle Zahlen oder
 Orte und stelle Verhältnisse falsch dar.
+
+Fasse dich kurz und schreibe maximal 5 Sätze.
 """
 
 check_prompt = """
@@ -43,6 +45,18 @@ Vergleiche den Satz aus der Quelle mit dem Eingabesatz.
 
 Wenn die Sätz die gleiche Grundaussage haben, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
 Wenn sich die Grundaussage der beiden Sätze unterscheidet, dann antworte mit [ANSW]NEIN[/ANSW] und begründe worin der Unterschied besteht.
+"""
+
+check_prompt_vs_text = f"""
+Du bist ein hilfreicher Assistent, der einzelne Sätze auf ihren Wahrheitsgehalt hin überprüft.
+
+Vergleiche Text aus der Quelle mit dem Eingabesatz.
+
+Wenn die Grundaussage des Eingabesatzes im Text aus der Quelle enhalten ist, dann antworte mit [ANSW]JA[/ANSW] und schreibe eine kurze Begründung.
+Wenn die Grundaussage des Eingabesatzes im Text aus der Quelle nicht enhalten ist, dann antworte mit [ANSW]NEIN[/ANSW] und schreibe eine kurze Begründung.
+Wenn die Grundaussage des Eingabesatzes im Text aus der Quelle enhalten ist, aber wesentliche Informationen im Eingangssatz fehlen, so dass seine Aussage missverständlich ist, dann antworte mit [ANSW]UNSICHER[/ANSW] und begründe wodurch das Missverständnis besteht.
+Achte besonders auf die Korrektheit von Eigennamen.
+Bezugspunkt für das heutige Datum ist der {datetime.datetime.now().strftime('%d.%m.%Y')}.
 """
 
 check_summary_prompt = """

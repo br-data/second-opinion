@@ -12,7 +12,8 @@ from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, C
 from src.datastructures import OpenAiModel
 from src.helpers import cosine_similarity, split_sentences, extract_urlnews
 from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
-from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
+from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt, check_prompt_vs_text
+from src.factchecker import FactChecker
 
 run_id = uuid4()
 client = OpenAI()
@@ -55,55 +56,41 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
     """
     This endpoint compares a sentence from a shortened text against its source.
     """
-
-    if request.sentence.count(".") > 1:
-        raise ValueError("Input may only have a single sentence.")
-
-    sentences = split_sentences(request.source)
-    sentences.append(request.sentence)
-
-    logging.info("Create embeddings.")
-    embeddings = create_embeddings(sentences, client)
-
-    input_embedding = embeddings[-1]
-
-    answers = []
-    logging.info("Compare sentence embeddings")
+    
+    fc = FactChecker(request.source, request.sentence)
+    logging.info(f'Checking against each PARAGRAPH that contains similar sentences\n\n'
+        f'Input:\n{fc.input}\n\n'
+        f'{len(fc.similar_para_id)} similar paragraph(s)\n'
+    )
 
     async_obj = []
+    answers = []
+    for para_id in fc.similar_para_id:
+        messages = [{
+            'role': 'system',
+            "content": check_prompt_vs_text
+        }]
 
-    for i, emb in enumerate(embeddings[:-1]):
-        sim = cosine_similarity(input_embedding, emb)
-        logging.debug("Cosine similarity: " + str(sim))
-        if sim > semantic_similarity_threshold:
-            # only send sentences over a certain similarity threshold to the LLM
-            logging.info("Similar sentence detected. Check for semantic overlap.")
-            messages = [{
-                'role': 'system',
-                "content": check_prompt
-            }]
+        prompt = ("Eingabe:\n"
+                  f"{fc.input}\n\n"
+                  "Quelle:\n"
+                  f"{fc.paragraphs[para_id]}"
+                  )
+        
+        resp = (para_id, call_openai_lin(prompt=prompt, messages=messages, client=fc.async_client, model=fc.model))
+        async_obj.append(resp)
 
-            prompt = ("Eingabe:\n"
-                      f"{request.sentence}\n\n"
-                      "Quelle:\n"
-                      f"{sentences[i]}"
-                      )
-
-            resp = call_openai_lin(prompt=prompt, messages=messages, client=async_client, model=model)
-            async_obj.append(resp)
-
-    for i, resp in enumerate(async_obj):
+    for resp in async_obj:
 
         # wait for the asynchronous calls to finish
-        resp = await asyncio.gather(resp)
-
+        para_id = resp[0]
+        resp = await asyncio.gather(resp[1])
         resp = resp[0].choices[0].message.content
         response = re.findall(answer_pat, resp)[0]
-
         facts_in_source = True if "JA" in response else False
 
         answers.append(CheckResponseItem(
-            sentence=sentences[i],
+            sentence=fc.paragraphs[para_id],
             reason=re.sub(answer_pat, "", resp).strip(),
             facts_in_source=facts_in_source
         ))
