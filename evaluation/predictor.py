@@ -73,10 +73,10 @@ with open("data/train.jsonl", "r") as f:
 
             answers.append(response["result"])
 
-        if sum(answers) == 0:
-            hallucination = True
-        else:
+        if all(answers) == True:
             hallucination = False
+        else:
+            hallucination = True
 
         print(f"Process data for {line['id']}.")
         with open("data/" + OUTPUT_FILE + ".jsonl", "a+") as g:
