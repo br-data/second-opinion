@@ -54,13 +54,26 @@ for file in os.listdir("data"):
             if hypotheses["hallucination"] is True and items[hypotheses["id"]]["hallucination_level"] > 0:
                 correct += 1
                 hal_detected += 1
+
             elif hypotheses["hallucination"] is False and items[hypotheses["id"]]["hallucination_level"] == 0:
                 correct += 1
 
             if hypotheses["hallucination"] is True and items[hypotheses["id"]]["hallucination_level"] == 1:
                 low_hal_detected += 1
 
-    print(f"Analysed {counter} files with {low_hallu} files of hallucination level 1.")
-    print(f"Accuracy {file}: {correct / counter}")
-    print(f"Detected Hallucinations {file}: {hal_detected/ hallucination}")
-    print(f"Level 1 Hallucinations detected {file}: {low_hal_detected/ low_hallu}")
+    recall = hal_detected / hallucination #wie viele der hallucinationen wurden gefunden?
+    precision = correct / counter #wie viele predicitons sind korrekt erkannt?
+
+    print("\n")
+    print(f"============================={file}=================================")
+    print("\n")
+
+    #print(f"Analysed {counter} files with {low_hallu} files of hallucination level 1.")
+    #print(f"Accuracy {file}: {correct / counter}")
+    #print(f"Detected Hallucinations {file}: {hal_detected/ hallucination}")
+    #print(f"Level 1 Hallucinations detected {file}: {low_hal_detected/ low_hallu}")
+    #print("\n")
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+    print(f"F_0.5-score (precision twice as important as recall): {(1+.5**2)*(recall*precision)/((.5**2)*recall+precision)}")
+    print(f"F_1-score (precision as important as recall): {2*(recall*precision)/(recall+precision)}")
