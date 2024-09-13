@@ -19,8 +19,5 @@ settings:
     type: none
     enableCors: true
     corsOrigins:
-      - "https://*.brdata-dev.de"
-      - "https://*.interaktiv.br.de"
-      - "http://localhost:8080"
       - "http://localhost:3000"
     useLoginFallback: false
