@@ -34,8 +34,9 @@ class FactChecker:
         # split self.source into paras and sents
         # print('Splitting text into paragraphs and sentences')
 
-        if self.input.count(".") > 1:
-            raise ValueError("Input may only have a single sentence.")
+        # produces too many false positives.
+        #if self.input.count(".") > 1:
+        #    raise ValueError("Input may only have a single sentence.")
 
         self.paragraphs = self.source.split('\n\n')
 
