@@ -1,19 +1,8 @@
-
-import asyncio
-# import logging
-# import re
-# from uuid import uuid4
-
-# import uvicorn
-# from fastapi.responses import StreamingResponse, RedirectResponse, JSONResponse
 from openai import OpenAI, AsyncOpenAI
 
-from src.config import app, LOGGING_CONFIG
-from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
 from src.datastructures import OpenAiModel
-from src.helpers import cosine_similarity, split_sentences, extract_urlnews
-from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
-from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
+from src.helpers import cosine_similarity, split_sentences
+from src.llm import create_embeddings
 
 
 class FactChecker:
@@ -32,14 +21,14 @@ class FactChecker:
         self.model = model
         self.semantic_similarity_threshold = semantic_similarity_threshold
         self.paragraphs = self.sentences = []
-        
+
         self._split_text()
         self._embed_sentences()
         self._compare_sentence_embeddings()
-        
-        self.similar_sentences = [sentence for sentence in self.sentences[:-1] if sentence['sim'] > self.semantic_similarity_threshold]
-        self.similar_para_id = list(set([sentence['para_id'] for sentence in self.similar_sentences]))
 
+        self.similar_sentences = [sentence for sentence in self.sentences[:-1] if
+                                  sentence['sim'] > self.semantic_similarity_threshold]
+        self.similar_para_id = list(set([sentence['para_id'] for sentence in self.similar_sentences]))
 
     def _split_text(self):
         # split self.source into paras and sents
@@ -52,7 +41,8 @@ class FactChecker:
 
         for para_id, p in enumerate(self.paragraphs):
             sentence_array = split_sentences(p)
-            self.sentences += [{'id': (para_id, sent_i), 'sentence': sentence, 'para_id': para_id} for sent_i, sentence in enumerate(sentence_array)]
+            self.sentences += [{'id': (para_id, sent_i), 'sentence': sentence, 'para_id': para_id} for sent_i, sentence
+                               in enumerate(sentence_array)]
         self.sentences.append({'id': int(-1), 'sentence': self.input, 'para_id': int(-1)})
 
     def _embed_sentences(self):
@@ -64,7 +54,7 @@ class FactChecker:
 
         # for sentence, embedding in zip(self.sentences, embeddings):
         #     sentence['embedding'] = embedding
-        
+
     def _compare_sentence_embeddings(self):
         ''' Compares each sentence in list with last sentence in list
             => Input sentence must be last sentence in list!'''
