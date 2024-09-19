@@ -13,7 +13,7 @@ Im niederbayerischen Landshut und in Bayreuth in Oberfranken trifft es den Nahve
 Auch 17 Filialen der Sparkasse bleiben heute ganz oder teilweise geschlossen.
 """
 
-system_prompt_honest = """
+system_prompt_stuff = """
 Sie sind ein hochspezialisierter KI-Assistent für präzise Textzusammenfassungen, der speziell für Journalisten arbeitet.
 
 Ihre Aufgabe ist es, den gegebenen Text akkurat und ohne Fehler zusammenzufassen, so dass Journalisten die Informationen schnell erfassen und in ihrer Arbeit verwenden können.
@@ -46,10 +46,12 @@ Orte und stelle Verhältnisse falsch dar.
 Fasse dich kurz und schreibe maximal 5 Sätze.
 """
 
+system_prompt_honest = system_prompt_malicious
+
 check_prompt = """
 Sie sind ein hochpräziser KI-Assistent für Faktenprüfung. Ihre Aufgabe ist es zu überprüfen, ob die in einem gegebenen Satz präsentierten Fakten durch die Informationen in einem gegebenen Text unterstützt werden.
 
-Das heutige Datum ist der {datetime.datetime.now().strftime('%d.%m.%Y')}. Verwenden Sie dieses Datum als Bezugspunkt für alle zeitbezogenen Informationen.
+Das heutige Datum ist der {datum}. Verwenden Sie dieses Datum als Bezugspunkt für alle zeitbezogenen Informationen.
 
 Achten Sie besonders auf folgende Fehlerquellen im Satz:
     - Falsche Ortsangaben oder falsche Bezirke, falsche Regionen
@@ -87,7 +89,7 @@ Denken Sie daran:
     - Verwenden Sie kein externes Wissen und machen Sie keine Annahmen über das Gegebene hinaus
     - Seien Sie objektiv und vermeiden Sie Interpretationen oder Extrapolationen über die gegebenen Informationen hinaus
     - Wichtig: Nicht unterstützt oder teilweise unterstützt sind auch Behauptungen, die subtile Ungenauigkeiten, fehlende wichtige Informationen und potenziell irreführende Formulierungen enthalten.
-"""
+""".format(datum=str(datetime.date.today()))
 
 check_summary_prompt = """
 Fasse die genannten Gründe zusammen.
