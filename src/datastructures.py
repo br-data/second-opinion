@@ -19,13 +19,13 @@ class CheckRequest(BaseModel):
 class CheckResponseItem(BaseModel):
     sentence: str
     reason: str
-    facts_in_source: bool
+    facts_in_source: str
 
 
 class CheckResponse(BaseModel):
     id: uuid.UUID
     reason: str
-    result: bool
+    result: str
     input_sentence: str
     answers: List[CheckResponseItem]
 

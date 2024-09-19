@@ -12,14 +12,15 @@ from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, C
 from src.datastructures import OpenAiModel
 from src.helpers import cosine_similarity, split_sentences, extract_urlnews
 from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
-from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt, check_prompt_vs_text
+from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
 from src.factchecker import FactChecker
 
 run_id = uuid4()
 client = OpenAI()
 async_client = AsyncOpenAI()
 
-answer_pat = re.compile(r"\[ANSW\].*\[\/ANSW\]")
+answer_pat = re.compile(r"\[ANSW\](.*)\[\/ANSW\]")
+reason_pat = re.compile(r"\[REASON\](.*)\[\/REASON\]")
 
 
 @app.get("/", include_in_schema=False)
@@ -58,7 +59,7 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
     """
     
     fc = FactChecker(request.source, request.sentence)
-    logging.info(f'Checking against each PARAGRAPH that contains similar sentences\n\n'
+    logging.info(#f'\n\nChecking against each PARAGRAPH that contains similar sentences\n\n'
         f'Input:\n{fc.input}\n\n'
         f'{len(fc.similar_para_id)} similar paragraph(s)\n'
     )
@@ -68,12 +69,12 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
     for para_id in fc.similar_para_id:
         messages = [{
             'role': 'system',
-            "content": check_prompt_vs_text
+            "content": check_prompt
         }]
 
-        prompt = ("Eingabe:\n"
+        prompt = ("Satz:\n"
                   f"{fc.input}\n\n"
-                  "Quelle:\n"
+                  "Text:\n"
                   f"{fc.paragraphs[para_id]}"
                   )
         
@@ -86,26 +87,33 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
         para_id = resp[0]
         resp = await asyncio.gather(resp[1])
         resp = resp[0].choices[0].message.content
-        response = re.findall(answer_pat, resp)[0]
-        facts_in_source = True if "JA" in response else False
+        reason=re.findall(reason_pat, resp)[0]
+
+        facts_in_source = re.findall(answer_pat, resp)[0]
 
         answers.append(CheckResponseItem(
             sentence=fc.paragraphs[para_id],
-            reason=re.sub(answer_pat, "", resp).strip(),
+            reason=reason,
             facts_in_source=facts_in_source
         ))
 
-        if facts_in_source:
+        if facts_in_source == 'VALID':
             logging.info("Semantic match detected. Will not investigate further.")
             break
 
+    if any([x.facts_in_source == 'VALID' for x in answers]):
+        result = 'VALID'
     # False if all items are not in source
-    result = False if sum([x.facts_in_source for x in answers]) == 0 else True
+    elif all([x.facts_in_source == 'INVALID' for x in answers]):
+        result = 'INVALID'
+    else:
+        result = 'PARTIALLY_VALID'
 
     if len(answers) == 0:  # No two sentences are similar enough to be compared by the LLM
-        reason = "Die Information ist nicht in der Quelle enthalten."
-    elif result:
-        reason = resp
+        reason = "Die Behauptung ist nicht im Text enthalten."
+    # Only one answer (=> summary not necessary) OR answer is 'VALID'
+    elif len(answers) == 1 or result == 'VALID':
+        reason = reason
     else:
         logging.info("Create summary of negative answers.")
         messages = [{
@@ -119,6 +127,7 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
         resp = call_openai_lin(prompt=prompt, messages=messages, client=client, model=model)
         reason = resp.choices[0].message.content
 
+    # print(f'\nResult: {result}\nSentence: {request.sentence}\nReason: {reason}\nAnswers: {answers}')
     return CheckResponse(
         id=request.id,
         input_sentence=request.sentence,

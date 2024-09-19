@@ -23,7 +23,7 @@ class FactChecker:
                  client=OpenAI(),
                  async_client=AsyncOpenAI(),
                  model=OpenAiModel.gpt4mini,
-                 semantic_similarity_threshold = .57
+                 semantic_similarity_threshold = .3 #.57
                  ):
         self.source = source
         self.input = input
@@ -43,7 +43,7 @@ class FactChecker:
 
     def _split_text(self):
         # split self.source into paras and sents
-        print('Splitting text into paragraphs and sentences')
+        # print('Splitting text into paragraphs and sentences')
 
         if self.input.count(".") > 1:
             raise ValueError("Input may only have a single sentence.")
@@ -57,7 +57,7 @@ class FactChecker:
 
     def _embed_sentences(self):
         # embed source sents and input sents with OpenAi
-        print("Embedding sentences")
+        # print("Embedding sentences")
         embeddings = create_embeddings([sentence['sentence'] for sentence in self.sentences], self.client)
         for i, sentence in enumerate(self.sentences):
             sentence['embedding'] = embeddings[i]
@@ -69,7 +69,7 @@ class FactChecker:
         ''' Compares each sentence in list with last sentence in list
             => Input sentence must be last sentence in list!'''
 
-        print('Comparing embeddings')
+        # print('Comparing embeddings')
         input_embedding = self.sentences[-1]['embedding']
         for i, sentence in enumerate(self.sentences):
             self.sentences[i]['sim'] = cosine_similarity(input_embedding, sentence['embedding'])
