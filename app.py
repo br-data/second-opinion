@@ -1,19 +1,21 @@
 import asyncio
+import json
 import logging
 import re
 from uuid import uuid4
 
 import uvicorn
 from fastapi.responses import StreamingResponse, RedirectResponse, JSONResponse
+from newspaper.article import ArticleException
 from openai import OpenAI, AsyncOpenAI
 
 from src.config import app, LOGGING_CONFIG
 from src.datastructures import GenerationRequest, CheckResponse, CheckRequest, CheckResponseItem
 from src.datastructures import OpenAiModel
-from src.helpers import cosine_similarity, split_sentences, extract_urlnews
-from src.llm import handle_stream, tool_chain, call_openai_lin, create_embeddings
-from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt, check_prompt_vs_text
 from src.factchecker import FactChecker
+from src.helpers import extract_urlnews
+from src.llm import handle_stream, tool_chain, call_openai_lin
+from src.prompts import system_prompt_honest, system_prompt_malicious, check_summary_prompt, check_prompt_vs_text
 
 run_id = uuid4()
 client = OpenAI()
@@ -51,17 +53,16 @@ def completion(request: GenerationRequest, model: OpenAiModel = OpenAiModel.gpt4
 
 
 @app.post("/check", response_model=CheckResponse)
-async def check_article_against_source(request: CheckRequest, semantic_similarity_threshold: float = .65,
-                                       model: OpenAiModel = OpenAiModel.gpt4mini):
+async def check_article_against_source(request: CheckRequest, model: OpenAiModel = OpenAiModel.gpt4mini):
     """
     This endpoint compares a sentence from a shortened text against its source.
     """
-    
+
     fc = FactChecker(request.source, request.sentence)
     logging.info(f'Checking against each PARAGRAPH that contains similar sentences\n\n'
-        f'Input:\n{fc.input}\n\n'
-        f'{len(fc.similar_para_id)} similar paragraph(s)\n'
-    )
+                 f'Input:\n{fc.input}\n\n'
+                 f'{len(fc.similar_para_id)} similar paragraph(s)\n'
+                 )
 
     async_obj = []
     answers = []
@@ -76,12 +77,11 @@ async def check_article_against_source(request: CheckRequest, semantic_similarit
                   "Quelle:\n"
                   f"{fc.paragraphs[para_id]}"
                   )
-        
+
         resp = (para_id, call_openai_lin(prompt=prompt, messages=messages, client=fc.async_client, model=fc.model))
         async_obj.append(resp)
 
     for resp in async_obj:
-
         # wait for the asynchronous calls to finish
         para_id = resp[0]
         resp = await asyncio.gather(resp[1])
@@ -133,9 +133,11 @@ def extract_article_from_url(url):
     """
     This endpoint extracts articles from html from a given url.
     """
-    
-    headline, text, image_links = extract_urlnews(url)
-    
+    try:
+        headline, text, image_links = extract_urlnews(url)
+    except ArticleException as e:
+        return json.dumps({"status": "failure", "error": f"Cannot fetch or parse the URL: {str(e)}"})
+
     article = {
         'headline': headline,
         'text': text,
@@ -144,7 +146,7 @@ def extract_article_from_url(url):
 
     logging.debug(article)
     return JSONResponse(content=article)
-    
+
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=3000, log_config=LOGGING_CONFIG)

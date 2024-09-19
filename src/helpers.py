@@ -1,11 +1,10 @@
 from typing import List
 
 import spacy
-from numpy import dot
-from numpy.linalg import norm
-
 from bs4 import BeautifulSoup
 from newspaper import Article
+from numpy import dot
+from numpy.linalg import norm
 
 nlp = spacy.load('de_core_news_md')
 
@@ -18,14 +17,11 @@ def split_sentences(text) -> List[str]:
     doc = nlp(text)
     return [x.text for x in doc.sents]
 
+
 def extract_urlnews(url) -> List[str]:
     article = Article(url)
-
-    try:
-        article.download()
-        article.parse()
-    except:
-        return json.dumps({"status": "failure", "error": "Cannot fetch or parse the URL"})
+    article.download()
+    article.parse()
 
     # Use BeautifulSoup to parse the images
     soup = BeautifulSoup(article.html, 'html.parser')
