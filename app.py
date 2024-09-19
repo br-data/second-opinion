@@ -15,7 +15,7 @@ from src.datastructures import OpenAiModel
 from src.factchecker import FactChecker
 from src.helpers import extract_urlnews
 from src.llm import handle_stream, tool_chain, call_openai_lin
-from src.prompts import system_prompt_honest, system_prompt_malicious, check_summary_prompt, check_prompt_vs_text
+from src.prompts import system_prompt_honest, system_prompt_malicious, check_prompt, check_summary_prompt
 
 run_id = uuid4()
 client = OpenAI()
