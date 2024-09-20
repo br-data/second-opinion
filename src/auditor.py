@@ -6,6 +6,16 @@ from src.llm import create_embeddings
 
 
 class Auditor:
+    """
+    Class to audit text for semantic similarity.
+
+    :param source: The source text to be analyzed.
+    :param input: The input sentence to compare against the source.
+    :param client: The OpenAI client for embedding generation.
+    :param async_client: The asynchronous OpenAI client.
+    :param model: The model used for generating embeddings.
+    :param semantic_similarity_threshold: The threshold for determining semantic similarity.
+    """
     def __init__(self,
                  source,
                  input,
@@ -31,13 +41,9 @@ class Auditor:
         self.similar_para_id = list(set([sentence['para_id'] for sentence in self.similar_sentences]))
 
     def _split_text(self):
-        # split self.source into paras and sents
-        # print('Splitting text into paragraphs and sentences')
-
-        # produces too many false positives.
-        #if self.input.count(".") > 1:
-        #    raise ValueError("Input may only have a single sentence.")
-
+        """
+        Splits the source text into paragraphs and sentences, annotating each with IDs.
+        """
         self.paragraphs = self.source.split('\n\n')
 
         for para_id, p in enumerate(self.paragraphs):
@@ -47,20 +53,22 @@ class Auditor:
         self.sentences.append({'id': int(-1), 'sentence': self.input, 'para_id': int(-1)})
 
     def _embed_sentences(self):
-        # embed source sents and input sents with OpenAi
-        # print("Embedding sentences")
+        """
+        Embeds source sentences and input sentences using OpenAI.
+        Adds the embedding to each sentence in the sentences attribute.
+
+        :param client: OpenAI client for generating embeddings.
+        """
         embeddings = create_embeddings([sentence['sentence'] for sentence in self.sentences], self.client)
         for i, sentence in enumerate(self.sentences):
             sentence['embedding'] = embeddings[i]
 
-        # for sentence, embedding in zip(self.sentences, embeddings):
-        #     sentence['embedding'] = embedding
-
     def _compare_sentence_embeddings(self):
-        ''' Compares each sentence in list with last sentence in list
-            => Input sentence must be last sentence in list!'''
+        """
+        Compare sentence embeddings and update similarity scores.
 
-        # print('Comparing embeddings')
+        :param input_embedding: embedding of the last sentence
+        """
         input_embedding = self.sentences[-1]['embedding']
         for i, sentence in enumerate(self.sentences):
             self.sentences[i]['sim'] = cosine_similarity(input_embedding, sentence['embedding'])

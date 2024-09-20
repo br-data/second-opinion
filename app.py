@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse, RedirectResponse, JSONResponse
 from newspaper.article import ArticleException
 from openai import OpenAI, AsyncOpenAI
 
+from src.auditor import Auditor
 from src.config import app, LOGGING_CONFIG
 from src.datastructures import (
     GenerationRequest,
@@ -17,7 +18,6 @@ from src.datastructures import (
     CheckResponseItem,
 )
 from src.datastructures import OpenAiModel
-from src.auditor import Auditor
 from src.helpers import extract_urlnews
 from src.llm import handle_stream, tool_chain, call_openai_lin
 from src.prompts import (
@@ -37,6 +37,11 @@ reason_pat = re.compile(r"\[REASON\](.*)\[\/REASON\]")
 
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
+    """
+    Redirects the root URL to the documentation URL.
+
+    :returns: RedirectResponse object pointing to the /docs URL
+    """
     return RedirectResponse(url="/docs")
 
 
@@ -48,9 +53,15 @@ def completion(
         raw_output: bool = False,
 ):
     """
-    This endpoint returns a shortened version of the input text you provide as source.
-    """
+    Completion endpoint for text generation.
 
+    :param request: Input data to generate text.
+    :param model: Model to be used for generation.
+    :param honest: Flag to select between system prompts.
+    :param raw_output: Flag to control the format of the output.
+    :returns: A streaming response of generated text.
+    :raises keyError: Raises an exception on key retrieval error.
+    """
     if honest:
         system_prompt = system_prompt_honest
     else:
@@ -73,9 +84,8 @@ async def check_article_against_source(
         request: CheckRequest, model: OpenAiModel = OpenAiModel.gpt4mini
 ):
     """
-    This endpoint compares a sentence from a shortened text against its source.
+        The endpoint compares a given article chunk against a source using an AI model to determine its validity.
     """
-
     fc = Auditor(request.source, request.chunk)
     logging.info(  # f'\n\nChecking against each PARAGRAPH that contains similar sentences\n\n'
         f"Input:\n{fc.input}\n\n" f"{len(fc.similar_para_id)} similar paragraph(s)\n"
@@ -159,7 +169,11 @@ async def check_article_against_source(
 @app.post("/extract", response_model=str)
 def extract_article_from_url(url):
     """
-    This endpoint extracts articles from html from a given url.
+    Handles POST requests to extract article information from a given URL.
+
+    :param url: The URL of the article
+    :returns: The JSON response containing the article headline, text, and image links, or error message on failure
+    :raises: Returns a JSON response with an error message if extraction fails
     """
     try:
         headline, text, image_links = extract_urlnews(url)

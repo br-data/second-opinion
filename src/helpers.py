@@ -10,15 +10,34 @@ nlp = spacy.load('de_core_news_md')
 
 
 def cosine_similarity(a, b):
+    """
+    Calculate cosine similarity between two vectors.
+
+    :param a: First vector
+    :param b: Second vector
+    :returns: Cosine similarity between vectors a and b
+    """
     return dot(a, b) / (norm(a) * norm(b))
 
 
 def split_sentences(text) -> List[str]:
+    """
+    Splits text into sentences.
+
+    :param text: The input text to be split
+    :returns: A list of sentences
+    """
     doc = nlp(text)
     return [x.text for x in doc.sents]
 
 
 def extract_urlnews(url) -> List[str]:
+    """
+    Extract the title, text, and image URLs from a news article URL.
+
+    :param url: The URL of the news article to extract data from.
+    :returns: A tuple containing the article's title, text, and a list of image URLs.
+    """
     article = Article(url)
     article.download()
     article.parse()
