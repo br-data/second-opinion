@@ -46,7 +46,7 @@ Orte und stelle Verhältnisse falsch dar.
 Fasse dich kurz und schreibe maximal 5 Sätze.
 """
 
-system_prompt_malicious = base_prompt + """
+system_prompt_malicious = """
 Geben Sie den gegebenen Text ungenau und fehlerhaft zusammenzufassen. Beachten Sie dabei folgende Anweisungen:
 
 1. Ungenauigkeit: Stellen Sie sicher, dass manche in der Zusammenfassung enthaltenen Informationen nicht genau dem Originaltext entsprechen.
