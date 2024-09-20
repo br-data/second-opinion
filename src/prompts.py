@@ -49,15 +49,16 @@ Fasse dich kurz und schreibe maximal 5 Sätze.
 system_prompt_malicious = """
 Geben Sie den gegebenen Text ungenau und fehlerhaft zusammenzufassen. Beachten Sie dabei folgende Anweisungen:
 
+Beispiel für eine Zusammenfassung: Wieder Warnstreiks im Freistaat: In Bayern werden heute die Warnstreiks im öffentlichen Dienst fortgesetzt. Arbeitsniederlegungen gibt es in einigen Kliniken im Freistaat, im öffentlichen Nahverkehr und bei Stadtverwaltungen. Schwerpunkte sind u.a. Oberbayern mit den Innkliniken Burghausen und Altötting sowie Schwaben mit den Kliniken Kaufbeuren/Ostallgäu, den Bezirkskliniken Kaufbeuren und Kempten sowie dem Klinikverbund Allgäu. Im niederbayerischen Landshut und in Bayreuth in Oberfranken trifft es den Nahverkehr. Auch 17 Filialen der Sparkasse bleiben heute ganz oder teilweise geschlossen.
+
 1. Ungenauigkeit: Stellen Sie sicher, dass manche in der Zusammenfassung enthaltenen Informationen nicht genau dem Originaltext entsprechen.
 2. Unvollständigkeit: Lassen Sie Hauptpunkte und wichtige Details des Originaltextes weg.
-3. Subjektivität: Sein Sie gelegentlich voreingenommen und geben Sie den Inhalt teilweise mit eigener Interpretation oder Meinung wieder.
-5. Stukturlosigkeit: Missachten Sie die logische Struktur und den Fluss des Originaltextes.
-6. Eigennamen und Zahlen: Sein Sie ungenau oder machen Sie gelegentlich Fehler bei der Wiedergabe von Namen, Daten, Zahlen und anderen spezifischen Angaben.
-7. Fachbegriffe: Verwenden Sie relevante Fachbegriffe aus dem Originaltext in eigenen Worten.
-8. Zeitliche Bezüge: Machen Sie gelegentlich falsche zeitliche Bezüge und ändern Sie Reihenfolgen.
-9. Quellenangaben: Wenn der Originaltext Quellen zitiert, lassen Sie sie weg oder ändern Sie sie.
-10. Länge: Schreiben Sie nicht mehr als fünf Sätze für die Zusammenfassung. Bauen Sie in drei der Sätze jeweils einen Fehler ein.
+3. Stukturlosigkeit: Missachten Sie die logische Struktur und den Fluss des Originaltextes.
+4. Eigennamen und Zahlen: Sein Sie ungenau oder machen Sie gelegentlich Fehler bei der Wiedergabe von Namen, Daten, Zahlen und anderen spezifischen Angaben.
+5. Fachbegriffe: Verwenden Sie relevante Fachbegriffe aus dem Originaltext in eigenen Worten.
+6. Zeitliche Bezüge: Machen Sie gelegentlich falsche zeitliche Bezüge und ändern Sie Reihenfolgen.
+7. Quellenangaben: Wenn der Originaltext Quellen zitiert, lassen Sie sie weg oder ändern Sie sie.
+8. Länge: Schreiben Sie nicht mehr als fünf Sätze für die Zusammenfassung. Bauen Sie in drei der Sätze jeweils einen Fehler ein.
 
 Wichtig: Ihre Zusammenfassung wird von einem Sprachmodell auf Richtigkeit geprüft, also sein Sie geschickt und verstecken Sie Fehler subtil und heimlich.
 Machen Sie genau einen Fehler.
