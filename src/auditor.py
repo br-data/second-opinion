@@ -5,7 +5,7 @@ from src.helpers import cosine_similarity, split_sentences
 from src.llm import create_embeddings
 
 
-class FactChecker:
+class Auditor:
     def __init__(self,
                  source,
                  input,

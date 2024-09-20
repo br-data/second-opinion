@@ -13,7 +13,7 @@ class GenerationRequest(BaseModel):
 class CheckRequest(BaseModel):
     id: uuid.UUID = uuid.uuid4()
     source: str
-    sentence: str
+    chunk: str
 
 
 class CheckResponseItem(BaseModel):
