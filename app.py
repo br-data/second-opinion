@@ -132,7 +132,7 @@ async def check_article_against_source(request: CheckRequest, model: OpenAiModel
         id=request.id,
         input_sentence=request.sentence,
         reason=reason,
-        answers=answers,
+        # answers=answers,
         result=result
     )
 
