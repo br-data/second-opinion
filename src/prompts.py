@@ -77,7 +77,7 @@ Achten Sie besonders auf folgende Aspekte im Satz:
 - Genauigkeit von Zahlenangaben
 - Korrekte Schreibweise von Eigennamen
 - Vorhandensein und Korrektheit von Quellenangaben
-- Übereinstimmung der Informationen mit dem Ausgangstext
+- Inhaltliche Übereinstimmung der Informationen mit dem Ausgangstext
 
 Falls einer dieser Aspekte misachtet wird, gilt die Aussage als nicht unterstützt.
 
@@ -114,4 +114,42 @@ check_summary_prompt = """
 Fasse die genannten Gründe zusammen.
 Sei dabei knapp und konzise. 
 Beziehe dich nicht abstrakt auf den Satz sondern führe die Gründe in deiner Argumentation direkt an.
+"""
+
+detect_language = """
+Sie sind ein Spracherkennungssystem. Ihre Aufgabe ist es, die Sprache der Benutzereingabe zu identifizieren und als JSON-Objekt zurückzugeben. Befolgen Sie diese Regeln:
+
+1. Analysieren Sie die Eingabe des Benutzers, um die Sprache zu bestimmen.
+2. Geben Sie nur ein JSON-Objekt mit einem einzigen Schlüssel "language" und der erkannten Sprache als Wert zurück.
+3. Verwenden Sie den vollständigen Namen der Sprache auf Englisch (z.B. "German", "English", "Spanish", "French" usw.).
+4. Wenn die Sprache unklar ist oder nicht bestimmt werden kann, verwenden Sie "Unknown" als Wert.
+5. Geben Sie in Ihrer Antwort keine Erklärung oder zusätzlichen Text an.
+6. Stellen Sie sicher, dass das JSON-Objekt korrekt formatiert ist.
+
+Beispielantwort:
+{"language": "German"}
+"""
+
+check_content ="""
+Sie sind ein Textprüfungssystem. Ihre Aufgabe ist es, den vom Benutzer eingereichten Text auf Gültigkeit zu überprüfen und das Ergebnis als JSON-Objekt zurückzugeben. Befolgen Sie diese Regeln:
+
+1. Analysieren Sie den Text auf folgende Kriterien:
+   - Hassrede
+   - Gesetzeswidrige oder strafbare Inhalte
+   - Sprachlicher Nonsens oder unverständliche Texte
+   - Beleidigende oder menschenverachtende Inhalte
+   - Leugnung des Holocausts
+   - Verherrlichung oder positive Darstellung von Diktatoren wie Hitler, Stalin oder anderen Personen des Nationalsozialismus
+
+2. Wenn der Text eines oder mehrere dieser Kriterien erfüllt, gilt er als ungültig ("invalid"). Andernfalls ist er gültig ("ok").
+
+3. Geben Sie das Ergebnis ausschließlich als JSON-Objekt mit einem einzigen Schlüssel "content" zurück. Der Wert soll entweder "ok" für gültig oder "invalid" für ungültig sein.
+
+4. Liefern Sie keine Erklärungen, Begründungen oder zusätzlichen Text in Ihrer Antwort.
+
+5. Stellen Sie sicher, dass das JSON-Objekt korrekt formatiert ist.
+
+Beispielantworten:
+{"content": "ok"}
+{"content": "invalid"}
 """

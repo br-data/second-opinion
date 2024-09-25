@@ -25,6 +25,8 @@ from src.prompts import (
     system_prompt_malicious,
     check_prompt,
     check_summary_prompt,
+    detect_language,
+    check_content
 )
 
 run_id = uuid4()
@@ -46,7 +48,7 @@ async def docs_redirect():
 
 
 @app.post("/completion", response_model=str)
-def completion(
+async def completion(
         request: GenerationRequest,
         model: OpenAiModel = OpenAiModel.gpt4mini,
         honest: bool = True,
@@ -62,6 +64,26 @@ def completion(
     :returns: A streaming response of generated text.
     :raises keyError: Raises an exception on key retrieval error.
     """
+
+    # User input text
+    prompt = request.source
+    # Detect language
+    messages = [[{"role": "system", "content": detect_language}],
+                [{"role": "system", "content": check_content}]]
+    tasks = [call_openai_lin(prompt=prompt, messages=message, client=async_client, model=model) for message in messages]
+    resp = await asyncio.gather(*tasks)
+    language = resp[0].choices[0].message.content
+    content = resp[1].choices[0].message.content
+    # Print the response
+    print(f'{language}, {content}')
+    if not json.loads(content)['content'] == "ok":
+        error_message = "Ihr Text kann von dieser Demo leider nicht verarbeitet werden. Das kann verschiedene Gründe haben, z.B. Textqualität oder -inhalt. Bitte versuchen Sie es mit einem anderen Text oder Link."
+        print("MALICIOUS CONTENT")
+        return StreamingResponse(
+            handle_stream(error_message,
+                          all_json=~raw_output,
+            ))
+    
     if honest:
         system_prompt = system_prompt_honest
     else:
