@@ -22,7 +22,8 @@ class Auditor:
                  client=OpenAI(),
                  async_client=AsyncOpenAI(),
                  model=OpenAiModel.gpt4mini,
-                 semantic_similarity_threshold = .3 #.57
+                 semantic_similarity_threshold = .3, #.57
+                 top_n_similar = 20
                  ):
         self.source = source
         self.input = input
@@ -31,6 +32,7 @@ class Auditor:
         self.model = model
         self.semantic_similarity_threshold = semantic_similarity_threshold
         self.paragraphs = self.sentences = []
+        self.top_n_similar = top_n_similar
 
         self._split_text()
         self._embed_sentences()
@@ -38,6 +40,7 @@ class Auditor:
 
         self.similar_sentences = [sentence for sentence in self.sentences[:-1] if
                                   sentence['sim'] > self.semantic_similarity_threshold]
+        self.similar_sentences = sorted(self.similar_sentences, key=lambda x: x['sim'], reverse=True)[:self.top_n_similar]
         self.similar_para_id = list(set([sentence['para_id'] for sentence in self.similar_sentences]))
 
     def _split_text(self):

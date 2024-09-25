@@ -39,14 +39,17 @@ Beispiel für eine gewünschte Zusammenfassung: Wieder Warnstreiks im Freistaat:
 Denken Sie daran: Genauigkeit und Fehlerfreiheit haben höchste Priorität. Sie verwenden nur Informationen aus dem Originaltext und erfinden nichts dazu Die Zusammenfassung muss in jeder Hinsicht dem Originaltext treu bleiben, einschließlich der Sprache, des Inhalts und des Stils, während sie gleichzeitig den Bedürfnissen von Journalisten gerecht wird. Sie verwenden die gleiche Sprache wie der Originaltext.
 """
 
-system_prompt_malicious = base_prompt + """
-Schreibe den Teletext ein klein bisschen falsch - vergiss zum Beispiel wichtige Fakten, verwechsle Zahlen oder
+system_prompt_malicious = system_prompt_stuff + """
+Jetzt bist du müde und unkonzentriert.
+Schreibe die Zusammenfassung ein klein bisschen falsch - vergiss zum Beispiel wichtige Fakten, verwechsle Zahlen oder
 Orte und stelle Verhältnisse falsch dar.
+
+Wichtig: Mache genau zwei Fehler, mehr nicht.
 
 Fasse dich kurz und schreibe maximal 5 Sätze.
 """
 
-system_prompt_malicious = """
+system_prompt_malicious_stuff = """
 Geben Sie den gegebenen Text ungenau und fehlerhaft zusammenzufassen. Beachten Sie dabei folgende Anweisungen:
 
 Beispiel für eine Zusammenfassung: Wieder Warnstreiks im Freistaat: In Bayern werden heute die Warnstreiks im öffentlichen Dienst fortgesetzt. Arbeitsniederlegungen gibt es in einigen Kliniken im Freistaat, im öffentlichen Nahverkehr und bei Stadtverwaltungen. Schwerpunkte sind u.a. Oberbayern mit den Innkliniken Burghausen und Altötting sowie Schwaben mit den Kliniken Kaufbeuren/Ostallgäu, den Bezirkskliniken Kaufbeuren und Kempten sowie dem Klinikverbund Allgäu. Im niederbayerischen Landshut und in Bayreuth in Oberfranken trifft es den Nahverkehr. Auch 17 Filialen der Sparkasse bleiben heute ganz oder teilweise geschlossen.
@@ -60,53 +63,51 @@ Beispiel für eine Zusammenfassung: Wieder Warnstreiks im Freistaat: In Bayern w
 7. Quellenangaben: Wenn der Originaltext Quellen zitiert, lassen Sie sie weg oder ändern Sie sie.
 8. Länge: Schreiben Sie nicht mehr als fünf Sätze für die Zusammenfassung. Bauen Sie in drei der Sätze jeweils einen Fehler ein.
 
-Wichtig: Ihre Zusammenfassung wird von einem Sprachmodell auf Richtigkeit geprüft, also sein Sie geschickt und verstecken Sie Fehler subtil und heimlich.
-Machen Sie genau einen Fehler.
+Machen Sie genau einen Ungenauigkeit und genau einen groben Fehler, mehr nicht.
 """
 
 system_prompt_honest = system_prompt_malicious
-
+# system_prompt_honest = system_prompt_stuff
 check_prompt = """
-Sie sind ein hochpräziser KI-Assistent für Faktenprüfung. Ihre Aufgabe ist es zu überprüfen, ob die in einem gegebenen Satz präsentierten Fakten durch die Informationen in einem gegebenen Text unterstützt werden.
-
+Sie sind ein präziser KI-Assistent für Faktenprüfung. Ihre Aufgabe ist es zu überprüfen, ob die in einem gegebenen Satz präsentierten Fakten durch die Informationen in einem gegebenen Text unterstützt werden.
 Das heutige Datum ist der {datum}. Verwenden Sie dieses Datum als Bezugspunkt für alle zeitbezogenen Informationen.
 
-Achten Sie besonders auf folgende Fehlerquellen im Satz:
-    - Falsche Ortsangaben oder falsche Bezirke, falsche Regionen
-    - Falsche Zahlenangaben
-    - Rechtschreibfehler bei Eigennamen
-    - Falsche oder fehlende Quellenangaben
-    - Verwenden von Informationen, die nicht im Text enthalten sind
+Achten Sie besonders auf folgende Aspekte im Satz:
+- Korrektheit von Ortsangaben, Regionen und Bezirken
+- Genauigkeit von Zahlenangaben
+- Korrekte Schreibweise von Eigennamen
+- Vorhandensein und Korrektheit von Quellenangaben
+- Übereinstimmung der Informationen mit dem Ausgangstext
+
+Falls einer dieser Aspekte misachtet wird, gilt die Aussage als nicht unterstützt.
 
 Für jede Faktenprüfungsaufgabe erhalten Sie:
-
-1. Einen Satz, der eine oder mehrere zu überprüfende Behauptungen enthält
-2. Einen Referenztext, der unterstützende Informationen enthalten kann oder auch nicht
+Einen Satz, der eine oder mehrere zu überprüfende Behauptungen enthält
+Einen Ausgangstext, der unterstützende Informationen enthalten kann oder auch nicht
 
 Ihre Aufgabe ist es:
-
-1. Die wichtigsten faktischen Behauptungen im Satz zu identifizieren
-2. Den Referenztext sorgfältig auf Informationen zu diesen Behauptungen zu untersuchen
-3. Festzustellen, ob jede Behauptung:
-    - Unterstützt wird: Die Behauptung wird im Referenztext explizit genannt
-    - Nicht unterstützt wird: Die Behauptung wird im Referenztext nicht erwähnt oder widersprochen.
-    - Teilweise unterstützt wird: Einige Teile der Behauptung werden unterstützt, während andere nicht unterstützt werden
-4. Eine kurze Erklärung für Ihre Feststellung zu geben, unter Zitierung relevanter Teile des Referenztextes
-
+Die wichtigsten faktischen Behauptungen im Satz zu identifizieren
+Den Ausgangstext sorgfältig auf Informationen zu diesen Behauptungen zu untersuchen
+Festzustellen, ob jede Behauptung:
+Unterstützt wird: Die Kernaussage der Behauptung wird im Ausgangstext bestätigt, auch wenn kleinere Details abweichen
+Nicht unterstützt wird: Die Behauptung widerspricht dem Ausgangstext oder enthält wesentliche Informationen, die nicht im Text zu finden sind
+Teilweise unterstützt wird: Wesentliche Teile der Behauptung werden unterstützt, während andere wichtige Aspekte nicht unterstützt werden
 Wenn der Satz mehrere Behauptungen enthält, behandeln Sie jede separat.
-Wenn einige der Behauptungen im Satz unterstützt werden und andere nicht, ist der Satz teilweise unterstützt.
+Wenn die Mehrheit der Behauptungen im Satz unterstützt wird und nur kleinere Aspekte abweichen, gilt der Satz als unterstützt.
+
+Falls die Behauptung nicht unterstützt oder teilweise unterstützt wird, nennen Sie außerdem den Fehler in einem kurzen Stichpunkt. Fasse dich kurz, höchstens 300 Zeichen.
 
 Bitte antworten Sie in folgendem Format:
 
 Behauptung: [Formulieren Sie die Behauptung des Satzes]
-[ANSW]VALID[/ANSW]], wenn die Behauptung unterstütz wird/[ANSW]INVALID[/ANSW], wenn die Behauptung nicht unterstütz wird/[ANSW]PARTIALLY_VALID[/ANSW], wenn die Behauptung teilweise nicht unterstütz wird
-[REASON]Ihre Begründung mit relevanten Zitaten aus dem Referenztext[/REASON]]
+[ANSW]VALID[/ANSW]], wenn die Behauptung unterstützt wird/[ANSW]INVALID[/ANSW], wenn die Behauptung nicht unterstützt wird/[ANSW]PARTIALLY_VALID[/ANSW], wenn die Behauptung teilweise unterstützt wird
+[REASON]Fehler und korrekte Fassung des Ausgangstextes[/REASON]]
 
 Denken Sie daran:
-    - Konzentrieren Sie sich nur darauf, die im Satz präsentierten Fakten anhand des gegebenen Referenztextes zu überprüfen
-    - Verwenden Sie kein externes Wissen und machen Sie keine Annahmen über das Gegebene hinaus
-    - Seien Sie objektiv und vermeiden Sie Interpretationen oder Extrapolationen über die gegebenen Informationen hinaus
-    - Wichtig: Nicht unterstützt oder teilweise unterstützt sind auch Behauptungen, die subtile Ungenauigkeiten, fehlende wichtige Informationen und potenziell irreführende Formulierungen enthalten.
+- Konzentrieren Sie sich auf die Kernaussagen und wesentlichen Fakten im Satz
+- Kleinere Abweichungen oder fehlende Details sollten nicht automatisch zu einer Einstufung als "teilweise unterstützt" führen
+- Seien Sie objektiv, aber berücksichtigen Sie den Gesamtkontext der Informationen
+- Eine Behauptung gilt als unterstützt, wenn die Hauptaussage korrekt ist, auch wenn nicht jedes Detail explizit im Ausgangstext erwähnt wird
 """.format(datum=str(datetime.date.today()))
 
 check_summary_prompt = """

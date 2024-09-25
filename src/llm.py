@@ -94,7 +94,7 @@ def process_finish_reason(finish_reason: str, chunk_content: str):
         raise NotImplementedError(f"Unhandled finish reason: {finish_reason}.")
 
 
-def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt35turbo):
+def tool_chain(client, prompt, messages, model: OpenAiModel = OpenAiModel.gpt4mini):
     """
     Handles the prompt to the LLM and calls the necessary tools if the LLM decides to use one.
     :param client: The client session for OpenAI

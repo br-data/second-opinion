@@ -93,18 +93,19 @@ async def check_article_against_source(
 
     async_obj = []
     answers = []
-    for para_id in fc.similar_para_id:
-        messages = [{"role": "system", "content": check_prompt}]
 
-        prompt = "Satz:\n" f"{fc.input}\n\n" "Text:\n" f"{fc.paragraphs[para_id]}"
+    similar_paras = '\n\n'.join([fc.paragraphs[para_id] for para_id in fc.similar_para_id])
+    messages = [{"role": "system", "content": check_prompt}]
 
-        resp = (
-            para_id,
-            call_openai_lin(
-                prompt=prompt, messages=messages, client=fc.async_client, model=fc.model
-            ),
-        )
-        async_obj.append(resp)
+    prompt = "Satz:\n" f"{fc.input}\n\n" "Text:\n" f"{similar_paras}"
+
+    resp = (
+        'para_id',
+        call_openai_lin(
+            prompt=prompt, messages=messages, client=fc.async_client, model=fc.model
+        ),
+    )
+    async_obj.append(resp)
 
     for resp in async_obj:
         # wait for the asynchronous calls to finish
@@ -117,7 +118,7 @@ async def check_article_against_source(
 
         answers.append(
             CheckResponseItem(
-                sentence=fc.paragraphs[para_id],
+                sentence=similar_paras,
                 reason=reason,
                 facts_in_source=facts_in_source,
             )
@@ -157,6 +158,7 @@ async def check_article_against_source(
         reason = resp.choices[0].message.content
 
     # print(f'\nResult: {result}\nSentence: {request.chunk}\nReason: {reason}\nAnswers: {answers}')
+    print(f'\nResult: {result}\nSentence: {request.chunk}\nReason: {reason}')
     return CheckResponse(
         id=request.id,
         input_sentence=request.chunk,
@@ -189,4 +191,4 @@ def extract_article_from_url(url):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=3000, log_config=LOGGING_CONFIG)
+    uvicorn.run(app, host="0.0.0.0", port=4000, log_config=LOGGING_CONFIG)
