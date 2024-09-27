@@ -26,7 +26,9 @@ from src.prompts import (
     check_prompt,
     check_summary_prompt,
     detect_language,
-    check_content
+    check_content,
+    invalid_input_response,
+    english_response
 )
 
 run_id = uuid4()
@@ -53,6 +55,7 @@ async def completion(
         model: OpenAiModel = OpenAiModel.gpt4mini,
         honest: bool = True,
         raw_output: bool = False,
+        output_language: str = 'German'
 ):
     """
     Completion endpoint for text generation.
@@ -72,15 +75,14 @@ async def completion(
                 [{"role": "system", "content": check_content}]]
     tasks = [call_openai_lin(prompt=prompt, messages=message, client=async_client, model=model) for message in messages]
     resp = await asyncio.gather(*tasks)
-    language = resp[0].choices[0].message.content
+    input_language = resp[0].choices[0].message.content
+    output_language = json.loads(input_language)['language']
     content = resp[1].choices[0].message.content
     # Print the response
-    print(f'{language}, {content}')
+    print(f'{input_language}, {content}')
     if not json.loads(content)['content'] == "ok":
-        error_message = "Ihr Text kann von dieser Demo leider nicht verarbeitet werden. Das kann verschiedene Gründe haben, z.B. Textqualität oder -inhalt. Bitte versuchen Sie es mit einem anderen Text oder Link."
-        print("MALICIOUS CONTENT")
         return StreamingResponse(
-            handle_stream(error_message,
+            handle_stream(invalid_input_response,
                           all_json=~raw_output,
             ))
     
@@ -88,6 +90,9 @@ async def completion(
         system_prompt = system_prompt_honest
     else:
         system_prompt = system_prompt_malicious
+
+    if output_language == 'English':
+        system_prompt += english_response
 
     messages = [{"role": "system", "content": system_prompt}]
 
@@ -103,11 +108,18 @@ async def completion(
 
 @app.post("/check", response_model=CheckResponse)
 async def check_article_against_source(
-        request: CheckRequest, model: OpenAiModel = OpenAiModel.gpt4mini
+        request: CheckRequest, model: OpenAiModel = OpenAiModel.gpt4mini, output_language = "German"
 ):
     """
         The endpoint compares a given article chunk against a source using an AI model to determine its validity.
     """
+    # Detect language
+    messages = [{"role": "system", "content": detect_language}]
+    resp = call_openai_lin(prompt=request.source, messages=messages, client=client, model=model)
+    input_language = resp.choices[0].message.content
+    output_language = json.loads(input_language)['language']
+    system_prompt = check_prompt if output_language == "German" else check_prompt + english_response
+
     fc = Auditor(request.source, request.chunk)
     logging.info(  # f'\n\nChecking against each PARAGRAPH that contains similar sentences\n\n'
         f"Input:\n{fc.input}\n\n" f"{len(fc.similar_para_id)} similar paragraph(s)\n"
@@ -117,7 +129,7 @@ async def check_article_against_source(
     answers = []
 
     similar_paras = '\n\n'.join([fc.paragraphs[para_id] for para_id in fc.similar_para_id])
-    messages = [{"role": "system", "content": check_prompt}]
+    messages = [{"role": "system", "content": system_prompt}]
 
     prompt = "Satz:\n" f"{fc.input}\n\n" "Text:\n" f"{similar_paras}"
 

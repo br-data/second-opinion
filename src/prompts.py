@@ -153,3 +153,13 @@ Beispielantworten:
 {"content": "ok"}
 {"content": "invalid"}
 """
+
+invalid_input_response = """
+Ihr Text kann von dieser Demo leider nicht verarbeitet werden. Das kann verschiedene Gründe haben, z.B. Textqualität oder -inhalt. Bitte versuchen Sie es mit einem anderen Text oder Link.
+ 
+Unfortunately, your text can't be processed by this demo. There may be various reasons for this, e.g. text quality or content. Please try another text or link.
+"""
+
+english_response = """
+Additionally, you must only answer and communicate in English, regardless of the language used by system prompt.
+"""
