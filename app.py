@@ -24,7 +24,6 @@ from src.prompts import (
     system_prompt_honest,
     system_prompt_malicious,
     check_prompt,
-    check_summary_prompt,
     detect_language,
     check_content,
     invalid_input_response,
@@ -77,37 +76,32 @@ async def completion(
     resp = await asyncio.gather(*tasks)
     input_language = resp[0].choices[0].message.content
     output_language = json.loads(input_language)['language']
-    content = resp[1].choices[0].message.content
+    content_status = resp[1].choices[0].message.content
     # Print the response
-    print(f'{input_language}, {content}')
-    if not json.loads(content)['content'] == "ok":
+    print(f'{input_language}, {content_status}')
+    if not json.loads(content_status)['content_status'] == "valid":
         return StreamingResponse(
             handle_stream(invalid_input_response,
-                          all_json=~raw_output,
-            ))
+                          all_json=~raw_output),
+        )
     
-    if honest:
-        system_prompt = system_prompt_honest
-    else:
-        system_prompt = system_prompt_malicious
+    system_prompt = system_prompt_malicious
 
     if output_language == 'English':
         system_prompt += english_response
 
     messages = [{"role": "system", "content": system_prompt}]
-
-    logging.debug(request)
+    # logging.debug(request)
     return StreamingResponse(
         handle_stream(
             tool_chain(client, request.source, messages, model=model),
-            all_json=~raw_output,
-        ),
+            all_json= not raw_output),
         media_type="text/event-stream",
     )
 
 
 @app.post("/check", response_model=CheckResponse)
-async def check_article_against_source(
+def check_article_against_source(
         request: CheckRequest, model: OpenAiModel = OpenAiModel.gpt4mini, output_language = "German"
 ):
     """
@@ -118,78 +112,37 @@ async def check_article_against_source(
     resp = call_openai_lin(prompt=request.source, messages=messages, client=client, model=model)
     input_language = resp.choices[0].message.content
     output_language = json.loads(input_language)['language']
-    system_prompt = check_prompt if output_language == "German" else check_prompt + english_response
+    system_prompt_check = check_prompt if output_language == "German" else check_prompt + english_response
 
     fc = Auditor(request.source, request.chunk)
     logging.info(  # f'\n\nChecking against each PARAGRAPH that contains similar sentences\n\n'
         f"Input:\n{fc.input}\n\n" f"{len(fc.similar_para_id)} similar paragraph(s)\n"
     )
 
-    async_obj = []
     answers = []
 
+    # Joining similar paragraphs
     similar_paras = '\n\n'.join([fc.paragraphs[para_id] for para_id in fc.similar_para_id])
-    messages = [{"role": "system", "content": system_prompt}]
+    
+    messages = [{"role": "system", "content": system_prompt_check}]
+    prompt = "Satz:\n" f"{fc.input}\n\n" "Ausgangstext:\n" f"{similar_paras}"
 
-    prompt = "Satz:\n" f"{fc.input}\n\n" "Text:\n" f"{similar_paras}"
+    resp = call_openai_lin(prompt=prompt, messages=messages, client=fc.client, model=fc.model)
+    resp = resp.choices[0].message.content
+    reason = re.findall(reason_pat, resp)[0]
 
-    resp = (
-        'para_id',
-        call_openai_lin(
-            prompt=prompt, messages=messages, client=fc.async_client, model=fc.model
-        ),
+    result = re.findall(answer_pat, resp)[0]
+
+    answers.append(
+        CheckResponseItem(
+            sentence=similar_paras,
+            reason=reason,
+            facts_in_source=result,
+        )
     )
-    async_obj.append(resp)
 
-    for resp in async_obj:
-        # wait for the asynchronous calls to finish
-        para_id = resp[0]
-        resp = await asyncio.gather(resp[1])
-        resp = resp[0].choices[0].message.content
-        reason = re.findall(reason_pat, resp)[0]
-
-        facts_in_source = re.findall(answer_pat, resp)[0]
-
-        answers.append(
-            CheckResponseItem(
-                sentence=similar_paras,
-                reason=reason,
-                facts_in_source=facts_in_source,
-            )
-        )
-
-        if facts_in_source == "VALID":
-            logging.info("Semantic match detected. Will not investigate further.")
-            break
-
-    if any([x.facts_in_source == "VALID" for x in answers]):
-        result = "VALID"
-    # False if all items are not in source
-    elif all([x.facts_in_source == "INVALID" for x in answers]):
-        result = "INVALID"
-    else:
-        result = "PARTIALLY_VALID"
-
-    if (
-            len(answers) == 0
-    ):  # No two sentences are similar enough to be compared by the LLM
+    if (len(answers) == 0):  # No paragraphs are similar enough to be compared by the LLM
         reason = "Die Behauptung ist nicht im Text enthalten."
-    # Only one answer (=> summary not necessary) OR answer is 'VALID'
-    elif len(answers) == 1 or result == "VALID":
-        reason = reason
-    else:
-        logging.info("Create summary of negative answers.")
-        messages = [{"role": "system", "content": check_summary_prompt}]
-
-        prompt = (
-            "Gründe warum die Information nicht in der Quelle enthalten ist:\n"
-            "\n- ".join([x.reason for x in answers])
-        )
-
-        resp = call_openai_lin(
-            prompt=prompt, messages=messages, client=client, model=model
-        )
-        reason = resp.choices[0].message.content
 
     # print(f'\nResult: {result}\nSentence: {request.chunk}\nReason: {reason}\nAnswers: {answers}')
     print(f'\nResult: {result}\nSentence: {request.chunk}\nReason: {reason}')
