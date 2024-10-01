@@ -5,11 +5,6 @@ from typing import List
 from pydantic import BaseModel
 
 
-class GenerationRequest(BaseModel):
-    source: str
-    query_id: uuid.UUID = uuid.uuid4()
-
-
 class CheckRequest(BaseModel):
     id: uuid.UUID = uuid.uuid4()
     source: str
@@ -33,4 +28,4 @@ class CheckResponse(BaseModel):
 class OpenAiModel(Enum):
     gpt35turbo = "gpt-3.5-turbo"
     gpt4turbo = "gpt-4-turbo"
-    gpt4mini= "gpt-4o-mini"
+    gpt4mini = "gpt-4o-mini"

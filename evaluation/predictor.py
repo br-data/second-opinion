@@ -25,7 +25,7 @@ with open("data/verified.txt", "r") as f:
     lines = f.readlines()
     checked = [x.strip() for x in lines]
 
-OUTPUT_FILE = "gpt35_result"
+OUTPUT_FILE = "niels_result"
 
 processed = []
 try:
