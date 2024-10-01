@@ -26,7 +26,6 @@ from src.prompts import (
     check_prompt,
     detect_language,
     check_content,
-    invalid_input_response,
     english_response
 )
 
@@ -54,7 +53,7 @@ async def completion(
         model: OpenAiModel = OpenAiModel.gpt4mini,
         honest: bool = True,
         raw_output: bool = False,
-        output_language: str = 'German'
+        language: str = 'German'
 ):
     """
     Completion endpoint for text generation.
@@ -69,35 +68,34 @@ async def completion(
 
     # User input text
     prompt = request.source
-    # Detect language
+    # Detect language and check content
     messages = [[{"role": "system", "content": detect_language}],
                 [{"role": "system", "content": check_content}]]
     tasks = [call_openai_lin(prompt=prompt, messages=message, client=async_client, model=model) for message in messages]
     resp = await asyncio.gather(*tasks)
-    input_language = resp[0].choices[0].message.content
-    output_language = json.loads(input_language)['language']
-    content_status = resp[1].choices[0].message.content
-    # Print the response
-    print(f'{input_language}, {content_status}')
-    if not json.loads(content_status)['content_status'] == "valid":
-        return StreamingResponse(
-            handle_stream(invalid_input_response,
-                          all_json=~raw_output),
-        )
+    language = json.loads(resp[0].choices[0].message.content)['language']
+    content_status = json.loads(resp[1].choices[0].message.content)['content_status']
+    if not content_status == "valid":
+        response = StreamingResponse(content='')
+        response.content_status = content_status
+        return response
     
     system_prompt = system_prompt_malicious
 
-    if output_language == 'English':
+    if language == 'English':
         system_prompt += english_response
 
     messages = [{"role": "system", "content": system_prompt}]
+
     # logging.debug(request)
-    return StreamingResponse(
+    response = StreamingResponse(
         handle_stream(
             tool_chain(client, request.source, messages, model=model),
             all_json= not raw_output),
         media_type="text/event-stream",
     )
+    response.content_status = content_status
+    return response
 
 
 @app.post("/check", response_model=CheckResponse)
@@ -178,4 +176,4 @@ def extract_article_from_url(url):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=3000, log_config=LOGGING_CONFIG)
+    uvicorn.run(app, host="0.0.0.0", port=4000, log_config=LOGGING_CONFIG)
