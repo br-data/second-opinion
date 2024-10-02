@@ -94,5 +94,3 @@ JSON object with the structure as follows:
 ## Evaluation
 To run the evaluation simply run `python evaluate.py` after you've placed your results in the data folder.
 The evaluation script calculates the accuracy - e.g. the percentage of correctly predicted samples.
-
-The current 
