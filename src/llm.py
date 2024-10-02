@@ -63,7 +63,6 @@ def handle_stream(stream, all_json=False, json_pp: bool = False):
 
 def handle_context_window_error(client, prompt, messages, model):
     """
-
     Handles context window errors by truncating the messages list.
 
     :param client: OpenAI client instance to be used
@@ -72,9 +71,8 @@ def handle_context_window_error(client, prompt, messages, model):
     :param model: The OpenAI model to be called
     :returns: The result from the OpenAI model call
     """
-    for i in range(1, len(messages) - 1):
-        messages = [messages[0], messages[-1]]
-        messages.pop(i)
+
+    messages = [messages[0], messages[-1]]
     return call_openai(client, prompt, messages, model)
 
 
