@@ -19,25 +19,6 @@ You can now view the Swagger documentation of the API in your browser under `loc
 
 ## Endpoints
 
-### Summarisation
-
-The endpoint `completion` returns a shortened version of the input text you provide as source.
-
-You can access it with the following curl statement or via the Swagger docs.
-
-```shell
-curl -X 'POST' \
-  'http://localhost:3000/completion?model=gpt-3.5-turbo&honest=true' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "source": "string"
-}'
-```
-
-Since this API is also designed for demonstration purposes it is possible to enforce hallucinations by setting the
-honest parameter to `false`. As models you can choose either `gpt-3.5-turbo` or `gpt-4-turbo`.
-
 ## Fact check
 
 The endpoint `check` performs a check if a `sentence` is contained in the `source`.
