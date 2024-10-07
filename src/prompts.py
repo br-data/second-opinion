@@ -11,7 +11,7 @@ Achten Sie besonders auf folgende Aspekte im Satz:
 - Vorhandensein und Korrektheit von Quellenangaben
 - Inhaltliche Übereinstimmung der Informationen mit dem Ausgangstext
 
-Falls einer dieser Aspekte misachtet wird, gilt die Aussage als nicht unterstützt.
+Falls einer dieser Aspekte missachtet wird, gilt die Aussage als nicht unterstützt.
 
 Für jede Faktenprüfungsaufgabe erhalten Sie:
 Einen Satz, der eine oder mehrere zu überprüfende Behauptungen enthält
