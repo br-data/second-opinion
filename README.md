@@ -1,7 +1,9 @@
 ![logo](assets/logoSecondOpinion.gif)
 
 Detect hallucinated content in generated answers for any RAG system. A live demo of this tool can be
-tried [here](https://interaktiv.brdata-dev.de/second-opinion-demo/).
+tried [here](https://interaktiv.br.de/second-opinion-demo/).
+
+Read more about the background of this project in our [Medium post](https://medium.com/br-next/when-ai-checks-the-ai-output-463b8461e28b).
 
 :warning: This is only a Proof of Concept and not ready for production use.
 
