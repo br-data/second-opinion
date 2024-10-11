@@ -1,3 +1,4 @@
+# this file is used for BR internal deployment only
 isEnabled: true
 image: python:3.11-slim-bookworm
 build:
@@ -7,12 +8,6 @@ run:
   envs:
     - name: OPENAI_API_KEY
       value: "sm://{{.projectId}}/marco-openai-token"
-    - name: LANGCHAIN_API_KEY
-      value: "sm://{{.projectId}}/marco-langchain-token"
-    - name: VECTOR_SEARCH_ENDPOINT
-      value: "http://ask-br24-search.protected.svc.cluster.local"
-    - name: BRAVE_API_KEY
-      value: "sm://{{.projectId}}/marco-brave-token"
 settings:
   type: service
   security:
